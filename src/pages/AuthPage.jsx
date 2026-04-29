@@ -15,11 +15,11 @@ const AuthPage = () => {
     
     if (isLogin) {
       if (!login(formData.email, formData.password)) {
-        setError('Invalid credentials');
+        setError(t('invalidCredentials'));
       }
     } else {
       if (!register(formData.name, formData.email, formData.password)) {
-        setError('User already exists');
+        setError(t('userExists'));
       }
     }
   };

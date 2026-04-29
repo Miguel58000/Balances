@@ -301,7 +301,7 @@ const Dashboard = () => {
                 alignItems: 'center'
               }}>
                 <span style={{ fontWeight: '500' }}>
-                  {language === 'es' ? `Balance ${p.label}` : `${p.label} Balance`}
+                  {t('balanceOf')} {p.label}
                 </span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ 

@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.5.2-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.5.4-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -55,6 +55,15 @@
 - `src/index.css`: Sistema de diseño global y variables de tema.
 
 ## 📜 Historial de Versiones
+
+### v1.5.4 (29/04/2026)
+- **Localización Integral**: Eliminación de todos los textos "hardcoded". Ahora, todos los nombres de divisas, etiquetas de "Opcional", y títulos dinámicos del Dashboard se traducen automáticamente al cambiar de idioma.
+- **Refinamiento de UI**: Corrección de errores menores en los formularios y mejora en la coherencia de las etiquetas de categorías.
+
+### v1.5.3 (29/04/2026)
+- **Internacionalización de Errores**: Mensajes de "El usuario ya existe" y "Credenciales inválidas" ahora se muestran correctamente en el idioma seleccionado.
+- **Limpieza de Base de Datos Local**: Optimización del motor de unificación para eliminar definitivamente cuentas duplicadas obsoletas y consolidar todos los movimientos en el perfil activo.
+- **UX Adaptativa**: Mejoras en la retroalimentación visual durante el proceso de autenticación.
 
 ### v1.5.2 (29/04/2026)
 - **Solución Error 404 (Vercel)**: Implementación de `vercel.json` con reglas de reescritura para permitir la navegación directa y recargas de página en rutas secundarias de la SPA.

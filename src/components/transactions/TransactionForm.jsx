@@ -25,20 +25,20 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
   const [error, setError] = useState('');
 
   const currencies = [
-    { code: 'ARS', name: language === 'es' ? 'Peso Argentino' : 'Argentine Peso', symbol: '$' },
-    { code: 'USD', name: language === 'es' ? 'Dólar Estadounidense' : 'US Dollar', symbol: 'u$s' },
-    { code: 'EUR', name: 'Euro', symbol: '€' },
-    { code: 'BRL', name: language === 'es' ? 'Real Brasileño' : 'Brazilian Real', symbol: 'R$' },
-    { code: 'CLP', name: language === 'es' ? 'Peso Chileno' : 'Chilean Peso', symbol: '$' },
-    { code: 'UYU', name: language === 'es' ? 'Peso Uruguayo' : 'Uruguayan Peso', symbol: '$' },
-    { code: 'COP', name: language === 'es' ? 'Peso Colombiano' : 'Colombian Peso', symbol: '$' },
-    { code: 'MXN', name: language === 'es' ? 'Peso Mexicano' : 'Mexican Peso', symbol: '$' },
-    { code: 'GBP', name: language === 'es' ? 'Libra Esterlina' : 'British Pound', symbol: '£' },
-    { code: 'JPY', name: language === 'es' ? 'Yen Japonés' : 'Japanese Yen', symbol: '¥' },
-    { code: 'CNY', name: language === 'es' ? 'Yuan Chino' : 'Chinese Yuan', symbol: '¥' },
-    { code: 'CHF', name: language === 'es' ? 'Franco Suizo' : 'Swiss Franc', symbol: 'Fr' },
-    { code: 'CAD', name: language === 'es' ? 'Dólar Canadiense' : 'Canadian Dollar', symbol: '$' },
-    { code: 'AUD', name: language === 'es' ? 'Dólar Australiano' : 'Australian Dollar', symbol: '$' }
+    { code: 'ARS', name: t('currency_ars'), symbol: '$' },
+    { code: 'USD', name: t('currency_usd'), symbol: 'u$s' },
+    { code: 'EUR', name: t('currency_eur'), symbol: '€' },
+    { code: 'BRL', name: t('currency_brl'), symbol: 'R$' },
+    { code: 'CLP', name: t('currency_clp'), symbol: '$' },
+    { code: 'UYU', name: t('currency_uyu'), symbol: '$' },
+    { code: 'COP', name: t('currency_cop'), symbol: '$' },
+    { code: 'MXN', name: t('currency_mxn'), symbol: '$' },
+    { code: 'GBP', name: t('currency_gbp'), symbol: '£' },
+    { code: 'JPY', name: t('currency_jpy'), symbol: '¥' },
+    { code: 'CNY', name: t('currency_cny'), symbol: '¥' },
+    { code: 'CHF', name: t('currency_chf'), symbol: 'Fr' },
+    { code: 'CAD', name: t('currency_cad'), symbol: '$' },
+    { code: 'AUD', name: t('currency_aud'), symbol: '$' }
   ];
 
   const filteredCurrencies = currencies.filter(c => 
@@ -350,7 +350,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
                           onClick={() => {
                             setFormData({ ...formData, category: cat.id });
                             setShowCatMenu(false);
-                            setCatError('');
+                            setError('');
                           }}
                         >
                           {cat.label}
@@ -386,7 +386,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
               exit={{ opacity: 0, height: 0 }}
               className="input-group"
             >
-              <label>{t('specify')} ({language === 'es' ? 'Opcional' : 'Optional'})</label>
+              <label>{t('specify')} ({t('optional')})</label>
               <input
                 type="text"
                 className="input-control"
