@@ -39,6 +39,73 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('balances_lang', language);
   }, [language]);
 
+  // --- Real-time Sync & Account Unification ---
+  useEffect(() => {
+    const unifyAccounts = () => {
+      const users = JSON.parse(localStorage.getItem('balances_users') || '[]');
+      if (users.length === 0) return;
+
+      const emailMap = {};
+      const newUsers = [];
+      let changed = false;
+
+      users.forEach(user => {
+        if (!emailMap[user.email]) {
+          emailMap[user.email] = user;
+          newUsers.push(user);
+        } else {
+          // Duplicate found! Merge transactions
+          const masterUser = emailMap[user.email];
+          const masterTx = JSON.parse(localStorage.getItem(`balances_tx_${masterUser.id}`) || '[]');
+          const duplicateTx = JSON.parse(localStorage.getItem(`balances_tx_${user.id}`) || '[]');
+          
+          if (duplicateTx.length > 0) {
+            // Combine and remove duplicates by ID if any
+            const combined = [...masterTx, ...duplicateTx];
+            const uniqueTx = Array.from(new Map(combined.map(item => [item.id, item])).values());
+            localStorage.setItem(`balances_tx_${masterUser.id}`, JSON.stringify(uniqueTx));
+          }
+          
+          // Cleanup duplicate storage
+          localStorage.removeItem(`balances_tx_${user.id}`);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        localStorage.setItem('balances_users', JSON.stringify(newUsers));
+        // If current user was a duplicate, update to master
+        if (currentUser) {
+          const updatedMaster = newUsers.find(u => u.email === currentUser.email);
+          if (updatedMaster && updatedMaster.id !== currentUser.id) {
+            setCurrentUser(updatedMaster);
+            localStorage.setItem('balances_user', JSON.stringify(updatedMaster));
+          }
+        }
+      }
+    };
+
+    unifyAccounts();
+
+    const handleStorageChange = (e) => {
+      // Sync user session
+      if (e.key === 'balances_user') {
+        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+        setCurrentUser(newUser);
+      }
+      // Sync transactions for current user
+      if (currentUser && e.key === `balances_tx_${currentUser.id}`) {
+        setTransactions(e.newValue ? JSON.parse(e.newValue) : []);
+      }
+      // Sync theme/lang
+      if (e.key === 'balances_theme' && e.newValue) setTheme(e.newValue);
+      if (e.key === 'balances_lang' && e.newValue) setLanguage(e.newValue);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [currentUser]);
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };

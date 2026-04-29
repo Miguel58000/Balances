@@ -30,15 +30,14 @@ const Footer = () => {
           <div style={{ 
             width: '100%', 
             display: 'flex', 
-            justifyContent: 'space-between', 
+            flexDirection: 'column',
             alignItems: 'center',
             paddingTop: '20px',
             marginTop: '20px',
             borderTop: '1px solid var(--border-glass)',
-            flexWrap: 'wrap',
             gap: '12px'
           }}>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', textAlign: 'center', width: '100%' }}>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', textAlign: 'center' }}>
               © 2026 Miguel Rodríguez. {t('rights')}.
             </div>
             
@@ -51,7 +50,7 @@ const Footer = () => {
               flexWrap: 'wrap',
               justifyContent: 'center'
             }}>
-              <span>{t('version')} 1.4.0</span>
+              <span>{t('version')} 1.5.0</span>
               <span className="desktop-only">•</span>
               <span>{t('lastUpdate')}: 29/04/2026</span>
             </div>
