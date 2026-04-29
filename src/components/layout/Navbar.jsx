@@ -166,7 +166,7 @@ const Navbar = () => {
                 textAlign: 'right'
               }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)' }}>
-                  {currentUser.name.split(' ')[0]} 👋
+                  {(currentUser.name || '').split(' ')[0]} 👋
                 </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: '500' }}>{currentUser.email}</div>
               </div>
@@ -249,7 +249,7 @@ const Navbar = () => {
 
               <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--border-glass)' }}>
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{currentUser.name}</div>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{currentUser.name || ''}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{currentUser.email}</div>
                 </div>
                 <button onClick={logout} className="btn" style={{ 
