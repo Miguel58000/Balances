@@ -104,7 +104,19 @@ button {
 }
 
 /* Responsiveness Utilities */
+.mobile-only {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
+  .mobile-only {
+    display: flex !important;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+
   .container {
     padding: 0 16px;
   }
@@ -120,25 +132,16 @@ button {
   }
   
   .glass-card {
-    padding: 20px !important;
+    padding: 24px !important;
   }
   
-  .btn {
+  .btn:not(.btn-icon) {
     width: 100%;
     justify-content: center;
   }
 
-  .nav-text, .profile-box {
-    display: none !important;
-  }
-
   nav .container {
     gap: 8px;
-  }
-
-  nav .btn {
-    width: auto;
-    padding: 8px !important;
   }
 }
 
@@ -170,6 +173,22 @@ button {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 /* Inputs */

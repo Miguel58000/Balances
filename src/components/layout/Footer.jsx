@@ -38,7 +38,7 @@ const Footer = () => {
             flexWrap: 'wrap',
             gap: '12px'
           }}>
-            <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', textAlign: 'center', width: '100%' }}>
               © 2026 Miguel Rodríguez. {t('rights')}.
             </div>
             
@@ -47,9 +47,12 @@ const Footer = () => {
               fontSize: '0.85rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '12px',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
             }}>
-              <span>{t('version')}1.3.0</span>
+              <span>{t('version')} 1.4.0</span>
+              <span className="desktop-only">•</span>
               <span>{t('lastUpdate')}: 29/04/2026</span>
             </div>
           </div>

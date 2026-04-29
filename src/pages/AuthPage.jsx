@@ -89,11 +89,14 @@ const AuthPage = () => {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {!isLogin && (
             <div className="input-group">
-              <label>{t('fullName')}</label>
+              <label htmlFor="name">{t('fullName')}</label>
               <div style={{ position: 'relative' }}>
                 <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                 <input
+                  id="name"
+                  name="name"
                   type="text"
+                  autoComplete="name"
                   className="input-control"
                   style={{ paddingLeft: '40px' }}
                   placeholder="John Doe"
@@ -106,11 +109,14 @@ const AuthPage = () => {
           )}
 
           <div className="input-group">
-            <label>{t('email')}</label>
+            <label htmlFor="email">{t('email')}</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
               <input
+                id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 className="input-control"
                 style={{ paddingLeft: '40px' }}
                 placeholder="name@example.com"
@@ -122,11 +128,14 @@ const AuthPage = () => {
           </div>
 
           <div className="input-group">
-            <label>{t('password')}</label>
+            <label htmlFor="password">{t('password')}</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
               <input
+                id="password"
+                name="password"
                 type="password"
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 className="input-control"
                 style={{ paddingLeft: '40px' }}
                 placeholder="••••••••"
@@ -141,7 +150,7 @@ const AuthPage = () => {
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              style={{ color: 'var(--danger)', fontSize: '0.9rem', textAlign: 'center' }}
+              style={{ color: 'var(--danger)', fontSize: '0.9rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '8px', borderRadius: '8px' }}
             >
               {error}
             </motion.div>
