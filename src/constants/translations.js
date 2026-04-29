@@ -84,7 +84,8 @@ export const translations = {
     currency_cny: 'Chinese Yuan',
     currency_chf: 'Swiss Franc',
     currency_cad: 'Canadian Dollar',
-    currency_aud: 'Australian Dollar'
+    currency_aud: 'Australian Dollar',
+    syncing: 'Syncing...'
   },
   es: {
     dashboard: 'Dashboard',
@@ -171,6 +172,7 @@ export const translations = {
     currency_cny: 'Yuan Chino',
     currency_chf: 'Franco Suizo',
     currency_cad: 'Dólar Canadiense',
-    currency_aud: 'Dólar Australiano'
+    currency_aud: 'Dólar Australiano',
+    syncing: 'Sincronizando...'
   }
 };
