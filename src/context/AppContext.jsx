@@ -1,33 +1,73 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translations } from '../constants/translations';
+import { auth, db } from '../firebase';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  updateProfile
+} from 'firebase/auth';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  updateDoc,
+  orderBy
+} from 'firebase/firestore';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('balances_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('balances_theme');
-    return saved || 'dark';
-  });
-
-  const [language, setLanguage] = useState(() => {
-    const saved = localStorage.getItem('balances_lang');
-    return saved || 'es';
-  });
-
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem('balances_theme') || 'dark');
+  const [language, setLanguage] = useState(() => localStorage.getItem('balances_lang') || 'es');
 
+  // Auth Listener
   useEffect(() => {
-    if (currentUser) {
-      const saved = localStorage.getItem(`balances_tx_${currentUser.id}`);
-      setTransactions(saved ? JSON.parse(saved) : []);
-    } else {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser({
+          id: user.uid,
+          name: user.displayName,
+          email: user.email
+        });
+      } else {
+        setCurrentUser(null);
+      }
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Firestore Transactions Listener
+  useEffect(() => {
+    if (!currentUser) {
       setTransactions([]);
+      return;
     }
+
+    const q = query(
+      collection(db, 'transactions'),
+      where('userId', '==', currentUser.id),
+      orderBy('date', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const txs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTransactions(txs);
+    });
+
+    return unsubscribe;
   }, [currentUser]);
 
   useEffect(() => {
@@ -39,159 +79,63 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('balances_lang', language);
   }, [language]);
 
-  // --- Real-time Sync & Account Unification ---
-  useEffect(() => {
-    const runUnification = () => {
-      const rawUsers = localStorage.getItem('balances_users');
-      const users = JSON.parse(rawUsers || '[]');
-      if (users.length <= 1) return;
-
-      const emailGroups = {};
-      let hasDuplicates = false;
-
-      // Group users by normalized email
-      users.forEach(u => {
-        const normEmail = u.email.trim().toLowerCase();
-        if (!emailGroups[normEmail]) emailGroups[normEmail] = [];
-        emailGroups[normEmail].push(u);
-      });
-
-      const newUsers = [];
-      let currentSessionNeedsUpdate = false;
-      let targetMaster = null;
-      
-      Object.values(emailGroups).forEach(group => {
-        const master = group[0];
-        newUsers.push(master);
-        
-        if (group.length > 1) {
-          hasDuplicates = true;
-          let allTx = JSON.parse(localStorage.getItem(`balances_tx_${master.id}`) || '[]');
-          
-          group.slice(1).forEach(dup => {
-            const dupTx = JSON.parse(localStorage.getItem(`balances_tx_${dup.id}`) || '[]');
-            allTx = [...allTx, ...dupTx];
-            
-            // If the user we are merging is our current session
-            if (currentUser && currentUser.id === dup.id) {
-              currentSessionNeedsUpdate = true;
-              targetMaster = master;
-            }
-            
-            localStorage.removeItem(`balances_tx_${dup.id}`);
-          });
-
-          // Unique transactions only
-          const uniqueTx = Array.from(new Map(allTx.map(tx => [tx.id, tx])).values());
-          localStorage.setItem(`balances_tx_${master.id}`, JSON.stringify(uniqueTx));
-        }
-      });
-
-      if (hasDuplicates) {
-        localStorage.setItem('balances_users', JSON.stringify(newUsers));
-        
-        if (currentSessionNeedsUpdate && targetMaster) {
-          setCurrentUser(targetMaster);
-          localStorage.setItem('balances_user', JSON.stringify(targetMaster));
-        } else if (currentUser) {
-          // Double check if our current user was removed but we didn't catch it in the loop
-          const stillExists = newUsers.find(u => u.id === currentUser.id);
-          if (!stillExists) {
-            const masterForMe = newUsers.find(u => u.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
-            if (masterForMe) {
-              setCurrentUser(masterForMe);
-              localStorage.setItem('balances_user', JSON.stringify(masterForMe));
-            }
-          }
-        }
-      }
-    };
-
-    runUnification();
-
-    const handleStorageChange = (e) => {
-      if (!e.newValue) return;
-
-      if (e.key === 'balances_user') {
-        setCurrentUser(JSON.parse(e.newValue));
-      }
-      
-      if (currentUser && e.key === `balances_tx_${currentUser.id}`) {
-        setTransactions(JSON.parse(e.newValue));
-      }
-
-      if (e.key === 'balances_users') {
-        runUnification();
-      }
-
-      if (e.key === 'balances_theme') setTheme(e.newValue);
-      if (e.key === 'balances_lang') setLanguage(e.newValue);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [currentUser?.id, currentUser?.email]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
-
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'es' ? 'en' : 'es');
-  };
-
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const toggleLanguage = () => setLanguage(prev => prev === 'es' ? 'en' : 'es');
   const t = (key) => translations[language][key] || key;
 
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('balances_users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('balances_user', JSON.stringify(user));
-      return true;
-    }
-    return false;
-  };
-
-  const register = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('balances_users') || '[]');
-    if (users.find(u => u.email === email)) return false;
-    
-    const newUser = { id: Date.now().toString(), name, email, password };
-    users.push(newUser);
-    localStorage.setItem('balances_users', JSON.stringify(users));
-    setCurrentUser(newUser);
-    localStorage.setItem('balances_user', JSON.stringify(newUser));
-    return true;
-  };
-
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('balances_user');
-  };
-
-  const addTransaction = (tx) => {
-    const newTx = { ...tx, id: Date.now().toString() };
-    const updated = [newTx, ...transactions];
-    setTransactions(updated);
-    if (currentUser) {
-      localStorage.setItem(`balances_tx_${currentUser.id}`, JSON.stringify(updated));
+  const login = async (email, password) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
-  const deleteTransaction = (id) => {
-    const updated = transactions.filter(t => t.id !== id);
-    setTransactions(updated);
-    if (currentUser) {
-      localStorage.setItem(`balances_tx_${currentUser.id}`, JSON.stringify(updated));
+  const register = async (name, email, password) => {
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(res.user, { displayName: name });
+      setCurrentUser({
+        id: res.user.uid,
+        name,
+        email
+      });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
-  const updateTransaction = (updatedTx) => {
-    const updated = transactions.map(t => t.id === updatedTx.id ? updatedTx : t);
-    setTransactions(updated);
-    if (currentUser) {
-      localStorage.setItem(`balances_tx_${currentUser.id}`, JSON.stringify(updated));
+  const logout = () => signOut(auth);
+
+  const addTransaction = async (tx) => {
+    if (!currentUser) return;
+    try {
+      await addDoc(collection(db, 'transactions'), {
+        ...tx,
+        userId: currentUser.id,
+        createdAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error adding transaction: ", error);
+    }
+  };
+
+  const deleteTransaction = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'transactions', id));
+    } catch (error) {
+      console.error("Error deleting transaction: ", error);
+    }
+  };
+
+  const updateTransaction = async (updatedTx) => {
+    try {
+      const { id, ...data } = updatedTx;
+      await updateDoc(doc(db, 'transactions', id), data);
+    } catch (error) {
+      console.error("Error updating transaction: ", error);
     }
   };
 
@@ -209,17 +153,16 @@ export const AppProvider = ({ children }) => {
       toggleTheme,
       language,
       toggleLanguage,
-      t
+      t,
+      loading
     }}>
-      {children}
+      {!loading && children}
     </AppContext.Provider>
   );
 };
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };

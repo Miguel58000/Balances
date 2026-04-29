@@ -9,18 +9,16 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const { login, register, t, toggleLanguage, language } = useApp();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
     if (isLogin) {
-      if (!login(formData.email, formData.password)) {
-        setError(t('invalidCredentials'));
-      }
+      const res = await login(formData.email, formData.password);
+      if (!res.success) setError(t('invalidCredentials'));
     } else {
-      if (!register(formData.name, formData.email, formData.password)) {
-        setError(t('userExists'));
-      }
+      const res = await register(formData.name, formData.email, formData.password);
+      if (!res.success) setError(t('userExists'));
     }
   };
 

@@ -82,10 +82,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
     if (transactionToEdit) {
       updateTransaction(finalData);
     } else {
-      addTransaction({
-        ...finalData,
-        id: Date.now().toString()
-      });
+      addTransaction(finalData);
     }
     
     if (onClose) onClose();
