@@ -40,8 +40,8 @@ export const AppProvider = ({ children }) => {
         });
       } else {
         setCurrentUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
     return unsubscribe;
   }, []);
@@ -53,6 +53,7 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
+    setLoading(true); // Empezamos a cargar datos del nuevo usuario
     const q = query(
       collection(db, 'transactions'),
       where('userId', '==', currentUser.id),
@@ -65,6 +66,7 @@ export const AppProvider = ({ children }) => {
         ...doc.data()
       }));
       setTransactions(txs);
+      setLoading(false); // Ya tenemos datos
     });
 
     return unsubscribe;

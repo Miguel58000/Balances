@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import LoadingScreen from './components/layout/LoadingScreen';
 
 const ProtectedRoute = ({ children }) => {
   const { currentUser } = useApp();
@@ -22,7 +23,9 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { currentUser } = useApp();
+  const { currentUser, loading } = useApp();
+
+  if (loading) return <LoadingScreen />;
 
   return (
     <Routes>
