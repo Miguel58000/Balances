@@ -41,70 +41,84 @@ export const AppProvider = ({ children }) => {
 
   // --- Real-time Sync & Account Unification ---
   useEffect(() => {
-    const unifyAccounts = () => {
+    const runUnification = () => {
       const users = JSON.parse(localStorage.getItem('balances_users') || '[]');
-      if (users.length === 0) return;
+      if (users.length <= 1) return;
 
-      const emailMap = {};
+      const emailGroups = {};
+      let hasDuplicates = false;
+
+      // Group users by email
+      users.forEach(u => {
+        if (!emailGroups[u.email]) emailGroups[u.email] = [];
+        emailGroups[u.email].push(u);
+      });
+
       const newUsers = [];
-      let changed = false;
+      
+      Object.values(emailGroups).forEach(group => {
+        const master = group[0];
+        newUsers.push(master);
+        
+        if (group.length > 1) {
+          hasDuplicates = true;
+          // Merge all transactions into master
+          let allTx = JSON.parse(localStorage.getItem(`balances_tx_${master.id}`) || '[]');
+          
+          group.slice(1).forEach(dup => {
+            const dupTx = JSON.parse(localStorage.getItem(`balances_tx_${dup.id}`) || '[]');
+            allTx = [...allTx, ...dupTx];
+            localStorage.removeItem(`balances_tx_${dup.id}`);
+          });
 
-      users.forEach(user => {
-        if (!emailMap[user.email]) {
-          emailMap[user.email] = user;
-          newUsers.push(user);
-        } else {
-          // Duplicate found! Merge transactions
-          const masterUser = emailMap[user.email];
-          const masterTx = JSON.parse(localStorage.getItem(`balances_tx_${masterUser.id}`) || '[]');
-          const duplicateTx = JSON.parse(localStorage.getItem(`balances_tx_${user.id}`) || '[]');
-          
-          if (duplicateTx.length > 0) {
-            // Combine and remove duplicates by ID if any
-            const combined = [...masterTx, ...duplicateTx];
-            const uniqueTx = Array.from(new Map(combined.map(item => [item.id, item])).values());
-            localStorage.setItem(`balances_tx_${masterUser.id}`, JSON.stringify(uniqueTx));
-          }
-          
-          // Cleanup duplicate storage
-          localStorage.removeItem(`balances_tx_${user.id}`);
-          changed = true;
+          // Unique transactions only
+          const uniqueTx = Array.from(new Map(allTx.map(tx => [tx.id, tx])).values());
+          localStorage.setItem(`balances_tx_${master.id}`, JSON.stringify(uniqueTx));
         }
       });
 
-      if (changed) {
+      if (hasDuplicates) {
         localStorage.setItem('balances_users', JSON.stringify(newUsers));
-        // If current user was a duplicate, update to master
+        
+        // If we are logged in as one of the merged accounts, switch to master
         if (currentUser) {
-          const updatedMaster = newUsers.find(u => u.email === currentUser.email);
-          if (updatedMaster && updatedMaster.id !== currentUser.id) {
-            setCurrentUser(updatedMaster);
-            localStorage.setItem('balances_user', JSON.stringify(updatedMaster));
+          const masterUser = newUsers.find(u => u.email === currentUser.email);
+          if (masterUser && masterUser.id !== currentUser.id) {
+            setCurrentUser(masterUser);
+            localStorage.setItem('balances_user', JSON.stringify(masterUser));
           }
         }
       }
     };
 
-    unifyAccounts();
+    runUnification();
 
     const handleStorageChange = (e) => {
-      // Sync user session
+      if (!e.newValue) return;
+
+      // Sync Session
       if (e.key === 'balances_user') {
-        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
-        setCurrentUser(newUser);
+        setCurrentUser(JSON.parse(e.newValue));
       }
-      // Sync transactions for current user
+      
+      // Sync Transactions (only if it matches our current ID)
       if (currentUser && e.key === `balances_tx_${currentUser.id}`) {
-        setTransactions(e.newValue ? JSON.parse(e.newValue) : []);
+        setTransactions(JSON.parse(e.newValue));
       }
-      // Sync theme/lang
-      if (e.key === 'balances_theme' && e.newValue) setTheme(e.newValue);
-      if (e.key === 'balances_lang' && e.newValue) setLanguage(e.newValue);
+
+      // If users list changed, re-run unification
+      if (e.key === 'balances_users') {
+        runUnification();
+      }
+
+      // Sync Theme/Lang
+      if (e.key === 'balances_theme') setTheme(e.newValue);
+      if (e.key === 'balances_lang') setLanguage(e.newValue);
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [currentUser]);
+  }, [currentUser?.id, currentUser?.email]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
