@@ -42,19 +42,23 @@ export const AppProvider = ({ children }) => {
   // --- Real-time Sync & Account Unification ---
   useEffect(() => {
     const runUnification = () => {
-      const users = JSON.parse(localStorage.getItem('balances_users') || '[]');
+      const rawUsers = localStorage.getItem('balances_users');
+      const users = JSON.parse(rawUsers || '[]');
       if (users.length <= 1) return;
 
       const emailGroups = {};
       let hasDuplicates = false;
 
-      // Group users by email
+      // Group users by normalized email
       users.forEach(u => {
-        if (!emailGroups[u.email]) emailGroups[u.email] = [];
-        emailGroups[u.email].push(u);
+        const normEmail = u.email.trim().toLowerCase();
+        if (!emailGroups[normEmail]) emailGroups[normEmail] = [];
+        emailGroups[normEmail].push(u);
       });
 
       const newUsers = [];
+      let currentSessionNeedsUpdate = false;
+      let targetMaster = null;
       
       Object.values(emailGroups).forEach(group => {
         const master = group[0];
@@ -62,12 +66,18 @@ export const AppProvider = ({ children }) => {
         
         if (group.length > 1) {
           hasDuplicates = true;
-          // Merge all transactions into master
           let allTx = JSON.parse(localStorage.getItem(`balances_tx_${master.id}`) || '[]');
           
           group.slice(1).forEach(dup => {
             const dupTx = JSON.parse(localStorage.getItem(`balances_tx_${dup.id}`) || '[]');
             allTx = [...allTx, ...dupTx];
+            
+            // If the user we are merging is our current session
+            if (currentUser && currentUser.id === dup.id) {
+              currentSessionNeedsUpdate = true;
+              targetMaster = master;
+            }
+            
             localStorage.removeItem(`balances_tx_${dup.id}`);
           });
 
@@ -80,12 +90,18 @@ export const AppProvider = ({ children }) => {
       if (hasDuplicates) {
         localStorage.setItem('balances_users', JSON.stringify(newUsers));
         
-        // If we are logged in as one of the merged accounts, switch to master
-        if (currentUser) {
-          const masterUser = newUsers.find(u => u.email === currentUser.email);
-          if (masterUser && masterUser.id !== currentUser.id) {
-            setCurrentUser(masterUser);
-            localStorage.setItem('balances_user', JSON.stringify(masterUser));
+        if (currentSessionNeedsUpdate && targetMaster) {
+          setCurrentUser(targetMaster);
+          localStorage.setItem('balances_user', JSON.stringify(targetMaster));
+        } else if (currentUser) {
+          // Double check if our current user was removed but we didn't catch it in the loop
+          const stillExists = newUsers.find(u => u.id === currentUser.id);
+          if (!stillExists) {
+            const masterForMe = newUsers.find(u => u.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
+            if (masterForMe) {
+              setCurrentUser(masterForMe);
+              localStorage.setItem('balances_user', JSON.stringify(masterForMe));
+            }
           }
         }
       }
@@ -96,22 +112,18 @@ export const AppProvider = ({ children }) => {
     const handleStorageChange = (e) => {
       if (!e.newValue) return;
 
-      // Sync Session
       if (e.key === 'balances_user') {
         setCurrentUser(JSON.parse(e.newValue));
       }
       
-      // Sync Transactions (only if it matches our current ID)
       if (currentUser && e.key === `balances_tx_${currentUser.id}`) {
         setTransactions(JSON.parse(e.newValue));
       }
 
-      // If users list changed, re-run unification
       if (e.key === 'balances_users') {
         runUnification();
       }
 
-      // Sync Theme/Lang
       if (e.key === 'balances_theme') setTheme(e.newValue);
       if (e.key === 'balances_lang') setLanguage(e.newValue);
     };
