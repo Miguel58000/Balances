@@ -56,6 +56,13 @@
 
 ## 📜 Historial de Versiones
 
+### v1.8.1 (30/04/2026)
+- **Motor de Conversión Mejorado**: Redondeo consistente a 2 decimales en todos los montos convertidos. Tasas de cambio redondeadas a 4 decimales para minimizar errores de punto flotante.
+- **Cache Inteligente de Tasas**: Las tasas de cambio se cachean por día (no por transacción) y se guardan en `localStorage`. Solo 1 llamada API por moneda por día, no por transacción.
+- **Eliminación de Llamadas Duplicadas**: Sistema de promesas pendientes (`pendingFetches`) evita múltiples requests simultáneos a la misma tasa.
+- **Formato Argentino Consistente**: Todos los montos se muestran con coma decimal y sin separador de miles (ej: `525997,00`),eliminando ambigüedad.
+- **Persistencia de Tasas**: Las tasas ARS se guardan en `localStorage` por día, permitiendo recargas sin llamar a la API y fallback a la última tasa conocida.
+
 ### v1.8.0 (30/04/2026)
 - **UX Móvil Maestro-Detalle**: Rediseño de la página de Movimientos para dispositivos móviles. La tabla ahora es más limpia y permite desplegar detalles y acciones (editar/eliminar) al tocar cada fila, optimizando el espacio.
 - **Header Responsivo Dinámico**: Ajuste del encabezado en móviles para priorizar el título y ubicar el botón de "Nuevo Movimiento" de forma clara y accesible.

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { translations } from '../constants/translations';
 import { auth, db } from '../firebase';
 import {
@@ -27,16 +27,30 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [displayCurrency, setDisplayCurrency] = useState('USD');
   const [exchangeRates, setExchangeRates] = useState({});
+  const pendingFetches = useRef({});
 
-  // Fetch ARS official rate from DolarApi (most reliable for ARS)
+  // Fetch ARS official rate from DolarApi (most reliable for ARS) with localStorage cache
   const fetchARSHistorical = async (date) => {
+    const dateStr = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+    const storageKey = `ars_rate_${dateStr}`;
+
+    // Intentar cargar tasa guardada
+    const savedRate = localStorage.getItem(storageKey);
+    if (savedRate) return parseFloat(savedRate);
+
     try {
       const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
       if (!response.ok) throw new Error();
       const data = await response.json();
-      return data.venta || 900;
+      const rate = data.venta || 900;
+      localStorage.setItem(storageKey, rate.toString());
+      return rate;
     } catch (e) {
-      return 900; // Valor de respaldo si falla la API de Argentina
+      // Fallback: tasa guardada más reciente (hoy)
+      const today = new Date().toISOString().split('T')[0];
+      const todayRate = localStorage.getItem(`ars_rate_${today}`);
+      if (todayRate) return parseFloat(todayRate);
+      return 900;
     }
   };
 
@@ -45,41 +59,62 @@ export const AppProvider = ({ children }) => {
     const cleanTo = to?.toUpperCase();
     if (cleanFrom === cleanTo) return 1;
 
-    const cacheKey = `${date}_${cleanFrom}_${cleanTo}`;
+    // Normalizar fecha a YYYY-MM-DD para cache (ignora hora/minutos)
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dateStr = dateObj.toISOString().split('T')[0];
+    const cacheKey = `${dateStr}_${cleanFrom}_${cleanTo}`;
+
+    // Retornar del cache si existe
     if (exchangeRates[cacheKey]) return exchangeRates[cacheKey];
 
-    try {
-      let rate;
-      if (cleanFrom === 'ARS' || cleanTo === 'ARS') {
-        const arsToUsdRate = await fetchARSHistorical(date);
-        if (cleanFrom === 'ARS') {
-          const usdToTarget = await fetchExchangeRate(date, 'USD', cleanTo);
-          rate = (1 / arsToUsdRate) * usdToTarget;
-        } else {
-          const sourceToUsd = await fetchExchangeRate(date, cleanFrom, 'USD');
-          rate = sourceToUsd * arsToUsdRate;
-        }
-      } else {
-        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${cleanFrom}`);
-        if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
-        rate = data.rates[cleanTo];
-      }
+    // Evitar llamadas duplicadas concurrentes
+    if (pendingFetches.current[cacheKey]) {
+      return pendingFetches.current[cacheKey];
+    }
 
-      if (rate && !isNaN(rate) && rate !== 0) {
-        setExchangeRates(prev => ({ ...prev, [cacheKey]: rate }));
-        return rate;
-      }
+    try {
+      const fetchPromise = (async () => {
+        let rate;
+        if (cleanFrom === 'ARS' || cleanTo === 'ARS') {
+          const arsToUsdRate = await fetchARSHistorical(dateStr);
+          if (cleanFrom === 'ARS') {
+            const usdToTarget = await fetchExchangeRate(dateStr, 'USD', cleanTo);
+            rate = (1 / arsToUsdRate) * usdToTarget;
+          } else {
+            const sourceToUsd = await fetchExchangeRate(dateStr, cleanFrom, 'USD');
+            rate = sourceToUsd * arsToUsdRate;
+          }
+        } else {
+          const response = await fetch(`https://api.exchangerate-api.com/v4/${dateStr}/${cleanFrom}`);
+          if (!response.ok) throw new Error('API Error');
+          const data = await response.json();
+          rate = data.rates[cleanTo];
+        }
+
+        if (rate && !isNaN(rate) && rate !== 0) {
+          // Redondear tasa a 4 decimales para minimizar errores de punto flotante
+          rate = Math.round(rate * 10000) / 10000;
+          setExchangeRates(prev => ({ ...prev, [cacheKey]: rate }));
+          return rate;
+        }
+        return 1;
+      })();
+
+      pendingFetches.current[cacheKey] = fetchPromise;
+      return await fetchPromise;
     } catch (error) {
       console.warn(`Error en conversión ${cleanFrom} -> ${cleanTo}`);
+      return 1;
+    } finally {
+      delete pendingFetches.current[cacheKey];
     }
-    return 1;
   };
 
   const convertAmount = async (amount, from, to, date) => {
-    if (from === to) return amount;
+    if (from === to) return Math.round(amount * 100) / 100;
     const rate = await fetchExchangeRate(date, from, to);
-    return amount * rate;
+    const converted = amount * rate;
+    return Math.round(converted * 100) / 100;
   };
   const [transactions, setTransactions] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem('balances_theme') || 'dark');
