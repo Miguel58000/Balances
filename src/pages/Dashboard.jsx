@@ -302,7 +302,7 @@ const Dashboard = () => {
             </span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {displayCurrency} {stats.income.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {displayCurrency} {stats.income.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -317,7 +317,7 @@ const Dashboard = () => {
             </span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {displayCurrency} {stats.expense.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {displayCurrency} {stats.expense.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -330,7 +330,7 @@ const Dashboard = () => {
             <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('netBalance')}</span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700', color: stats.balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            {stats.balance >= 0 ? '+' : ''}{displayCurrency} {stats.balance.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {stats.balance >= 0 ? '+' : ''}{displayCurrency} {stats.balance.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -343,7 +343,7 @@ const Dashboard = () => {
             <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('monthlyAvg')}</span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {displayCurrency} {Math.round(stats.avg).toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {displayCurrency} {Math.round(stats.avg).toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
 
@@ -356,7 +356,7 @@ const Dashboard = () => {
             <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('savingsRate')}</span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--success)' }}>
-            {stats.savingsRate.toFixed(1)}%
+             {stats.savingsRate.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
           </div>
         </div>
 
@@ -428,7 +428,7 @@ const Dashboard = () => {
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                    {displayCurrency} {item.value.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2 })} ({stats.expense > 0 ? ((item.value / stats.expense) * 100).toFixed(1) : 0}%)
+                     {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2 })} ({stats.expense > 0 ? ((item.value / stats.expense) * 100).toFixed(1) : 0}%)
                   </div>
                 </div>
               ))}
@@ -489,7 +489,7 @@ const Dashboard = () => {
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                    {displayCurrency} {item.value.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2 })} ({stats.income > 0 ? ((item.value / stats.income) * 100).toFixed(1) : 0}%)
+                     {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2 })} ({stats.income > 0 ? ((item.value / stats.income) * 100).toFixed(1) : 0}%)
                   </div>
                 </div>
               ))}
@@ -527,7 +527,7 @@ const Dashboard = () => {
                     fontSize: '1.1rem',
                     color: periodBalances[p.id] >= 0 ? 'var(--success)' : 'var(--danger)'
                   }}>
-                    {periodBalances[p.id] >= 0 ? '+' : ''}{displayCurrency} {periodBalances[p.id].toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {periodBalances[p.id] >= 0 ? '+' : ''}{displayCurrency} {periodBalances[p.id].toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
                     {p.sub}

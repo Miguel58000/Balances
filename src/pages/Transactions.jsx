@@ -435,7 +435,7 @@ const Transactions = () => {
                           fontWeight: '700',
                           color: transaction.type === 'income' ? 'var(--success)' : 'var(--text-main)'
                         }}>
-                          {transaction.type === 'income' ? '+' : '-'}$ {transaction.amount.toLocaleString(undefined, { useGrouping: false, minimumFractionDigits: 2 })}
+                          {transaction.type === 'income' ? '+' : '-'}$ {transaction.amount.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2 })}
                           <span className="transaction-currency">{transaction.currency}</span>
                         </div>
                       </td>
