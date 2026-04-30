@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.6.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.8.0-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -55,6 +55,19 @@
 - `src/index.css`: Sistema de diseño global y variables de tema.
 
 ## 📜 Historial de Versiones
+
+### v1.8.0 (30/04/2026)
+- **UX Móvil Maestro-Detalle**: Rediseño de la página de Movimientos para dispositivos móviles. La tabla ahora es más limpia y permite desplegar detalles y acciones (editar/eliminar) al tocar cada fila, optimizando el espacio.
+- **Header Responsivo Dinámico**: Ajuste del encabezado en móviles para priorizar el título y ubicar el botón de "Nuevo Movimiento" de forma clara y accesible.
+- **Sincronización de UI Automática**: Implementación de detección de tamaño de pantalla en tiempo real para adaptar la lógica de interacción instantáneamente al redimensionar.
+- **Refactorización de Estabilidad**: Solución de conflictos de nombres entre variables de transacciones y funciones de traducción, y corrección de advertencias de `framer-motion`.
+
+### v1.7.0 (29/04/2026)
+- **Motor de Divisas Universal**: Migración a **ExchangeRate-API**. Ahora el sistema soporta conversiones precisas para todas las monedas latinoamericanas (CLP, COP, UYU, MXN, etc.) eliminando el error de paridad 1:1.
+- **Formateo Numérico Limpio**: Eliminación global de los separadores de miles (comas) en todos los montos para una lectura más clara y técnica.
+- **Dashboard Visual Pro**: Implementación de desgloses detallados de porcentajes y montos convertidos debajo de los gráficos de torta.
+- **Selector de Divisas Nativo**: Optimización del selector de moneda para garantizar la visibilidad de todas las opciones y compatibilidad total en dispositivos móviles.
+- **Optimización de Conversión**: Refactorización de la lógica de "puente" de divisas para evitar bucles infinitos y mejorar la velocidad de carga del Panel de Control.
 
 ### v1.6.0 (29/04/2026)
 - **Sincronización Cloud (Firebase)**: Migración completa de almacenamiento local a **Google Firebase (Firestore & Auth)**. Ahora los movimientos se sincronizan en tiempo real entre múltiples dispositivos (PC, móvil, tablet).

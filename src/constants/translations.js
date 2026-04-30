@@ -85,7 +85,9 @@ export const translations = {
     currency_chf: 'Swiss Franc',
     currency_cad: 'Canadian Dollar',
     currency_aud: 'Australian Dollar',
-    syncing: 'Syncing...'
+    syncing: 'Syncing...',
+    monthlyAvg: 'Monthly Average',
+    savingsRate: 'Savings Rate'
   },
   es: {
     dashboard: 'Dashboard',
@@ -173,6 +175,8 @@ export const translations = {
     currency_chf: 'Franco Suizo',
     currency_cad: 'Dólar Canadiense',
     currency_aud: 'Dólar Australiano',
-    syncing: 'Sincronizando...'
+    syncing: 'Sincronizando...',
+    monthlyAvg: 'Promedio Mensual',
+    savingsRate: 'Tasa de Ahorro'
   }
 };

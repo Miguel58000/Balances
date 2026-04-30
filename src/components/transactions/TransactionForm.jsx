@@ -3,6 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, DollarSign, Tag, FileText, Calendar, ChevronDown } from 'lucide-react';
 
+import { CURRENCIES } from '../../constants/currencies';
+
 const TransactionForm = ({ onClose, transactionToEdit }) => {
   const { addTransaction, updateTransaction, transactions, t, language } = useApp();
   const [showCatMenu, setShowCatMenu] = useState(false);
@@ -24,32 +26,17 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
   const [customCategory, setCustomCategory] = useState('');
   const [error, setError] = useState('');
 
-  const currencies = [
-    { code: 'ARS', name: t('currency_ars'), symbol: '$' },
-    { code: 'USD', name: t('currency_usd'), symbol: 'u$s' },
-    { code: 'EUR', name: t('currency_eur'), symbol: '€' },
-    { code: 'BRL', name: t('currency_brl'), symbol: 'R$' },
-    { code: 'CLP', name: t('currency_clp'), symbol: '$' },
-    { code: 'UYU', name: t('currency_uyu'), symbol: '$' },
-    { code: 'COP', name: t('currency_cop'), symbol: '$' },
-    { code: 'MXN', name: t('currency_mxn'), symbol: '$' },
-    { code: 'GBP', name: t('currency_gbp'), symbol: '£' },
-    { code: 'JPY', name: t('currency_jpy'), symbol: '¥' },
-    { code: 'CNY', name: t('currency_cny'), symbol: '¥' },
-    { code: 'CHF', name: t('currency_chf'), symbol: 'Fr' },
-    { code: 'CAD', name: t('currency_cad'), symbol: '$' },
-    { code: 'AUD', name: t('currency_aud'), symbol: '$' }
-  ];
+  const currencies = CURRENCIES;
 
-  const filteredCurrencies = currencies.filter(c => 
-    c.code.toLowerCase().includes(curSearch.toLowerCase()) || 
-    c.name.toLowerCase().includes(curSearch.toLowerCase())
+  const filteredCurrencies = currencies.filter(c =>
+    c.code.toLowerCase().includes(curSearch.toLowerCase()) ||
+    (c.name && c.name.toLowerCase().includes(curSearch.toLowerCase()))
   );
 
   const categories = useMemo(() => {
     const baseExpense = ['Food', 'Transport', 'Housing', 'Services', 'Entertainment', 'Health', 'Education'];
     const baseIncome = ['Salary', 'Sales', 'Investment', 'Gift'];
-    
+
     // Get custom categories from transactions of this type
     const customCats = transactions
       .filter(tx => {
@@ -57,7 +44,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
         return !isDefault && tx.type === formData.type;
       })
       .map(tx => tx.category);
-    
+
     const uniqueCustom = [...new Set(customCats)];
     const currentBase = formData.type === 'expense' ? baseExpense : baseIncome;
 
@@ -72,7 +59,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
     e.preventDefault();
     if (!formData.category) return setError(t('specify'));
     if (parseFloat(formData.amount) <= 0 || isNaN(parseFloat(formData.amount))) return setError(t('invalidAmount'));
-    
+
     const finalData = {
       ...formData,
       amount: parseFloat(formData.amount),
@@ -84,7 +71,7 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
     } else {
       addTransaction(finalData);
     }
-    
+
     if (onClose) onClose();
   };
 
@@ -186,28 +173,28 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
               <button
                 type="button"
                 className="input-control"
-                style={{ 
-                  textAlign: 'left', 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                style={{
+                  textAlign: 'left',
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   paddingLeft: '16px'
                 }}
                 onClick={() => setShowCurMenu(!showCurMenu)}
               >
                 <span>{formData.currency}</span>
-                <ChevronDown size={18} style={{ 
-                  transform: showCurMenu ? 'rotate(180deg)' : 'rotate(0deg)', 
-                  transition: 'transform 0.3s' 
+                <ChevronDown size={18} style={{
+                  transform: showCurMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s'
                 }} />
               </button>
 
               <AnimatePresence>
                 {showCurMenu && (
                   <>
-                    <div 
-                      style={{ position: 'fixed', inset: 0, zIndex: 100 }} 
-                      onClick={() => setShowCurMenu(false)} 
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+                      onClick={() => setShowCurMenu(false)}
                     />
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -281,10 +268,10 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
             <button
               type="button"
               className="input-control"
-              style={{ 
-                textAlign: 'left', 
-                display: 'flex', 
-                justifyContent: 'space-between', 
+              style={{
+                textAlign: 'left',
+                display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 paddingLeft: '16px'
               }}
@@ -293,70 +280,70 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
               <span style={{ color: formData.category ? 'var(--text-main)' : 'var(--text-dim)' }}>
                 {formData.category ? getCategoryLabel(formData.category) : t('category')}
               </span>
-              <ChevronDown size={18} style={{ 
-                transform: showCatMenu ? 'rotate(180deg)' : 'rotate(0deg)', 
-                transition: 'transform 0.3s' 
+              <ChevronDown size={18} style={{
+                transform: showCatMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s'
               }} />
             </button>
 
-              <AnimatePresence>
-                {showCatMenu && (
-                  <>
-                    <div 
-                      style={{ position: 'fixed', inset: 0, zIndex: 100 }} 
-                      onClick={() => setShowCatMenu(false)} 
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="glass-card"
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '8px',
-                        zIndex: 110,
-                        maxHeight: '250px',
-                        overflowY: 'auto',
-                        padding: '8px',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-                        border: '1px solid var(--border-glass)'
-                      }}
-                    >
-                      {categories.map(cat => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          className="btn-option"
-                          style={{
-                            width: '100%',
-                            textAlign: 'left',
-                            padding: '12px 16px',
-                            borderRadius: '10px',
-                            background: formData.category === cat.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                            color: formData.category === cat.id ? 'var(--primary)' : 'var(--text-main)',
-                            fontSize: '0.95rem',
-                            marginBottom: '2px',
-                            display: 'block',
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onClick={() => {
-                            setFormData({ ...formData, category: cat.id });
-                            setShowCatMenu(false);
-                            setError('');
-                          }}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+            <AnimatePresence>
+              {showCatMenu && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+                    onClick={() => setShowCatMenu(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="glass-card"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: '8px',
+                      zIndex: 110,
+                      maxHeight: '250px',
+                      overflowY: 'auto',
+                      padding: '8px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                      border: '1px solid var(--border-glass)'
+                    }}
+                  >
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className="btn-option"
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px 16px',
+                          borderRadius: '10px',
+                          background: formData.category === cat.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                          color: formData.category === cat.id ? 'var(--primary)' : 'var(--text-main)',
+                          fontSize: '0.95rem',
+                          marginBottom: '2px',
+                          display: 'block',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => {
+                          setFormData({ ...formData, category: cat.id });
+                          setShowCatMenu(false);
+                          setError('');
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -412,10 +399,10 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-          <button 
-            type="button" 
-            onClick={onClose} 
-            className="btn" 
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn"
             style={{ flex: 1, border: '1px solid var(--border-glass)' }}
           >
             {t('cancel')}

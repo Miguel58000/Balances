@@ -1,21 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translations } from '../constants/translations';
 import { auth, db } from '../firebase';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc,
   updateDoc,
   orderBy
 } from 'firebase/firestore';
@@ -25,6 +25,62 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [displayCurrency, setDisplayCurrency] = useState('USD');
+  const [exchangeRates, setExchangeRates] = useState({});
+
+  // Fetch ARS official rate from DolarApi (most reliable for ARS)
+  const fetchARSHistorical = async (date) => {
+    try {
+      const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      return data.venta || 900;
+    } catch (e) {
+      return 900; // Valor de respaldo si falla la API de Argentina
+    }
+  };
+
+  const fetchExchangeRate = async (date, from, to) => {
+    const cleanFrom = from?.toUpperCase();
+    const cleanTo = to?.toUpperCase();
+    if (cleanFrom === cleanTo) return 1;
+
+    const cacheKey = `${date}_${cleanFrom}_${cleanTo}`;
+    if (exchangeRates[cacheKey]) return exchangeRates[cacheKey];
+
+    try {
+      let rate;
+      if (cleanFrom === 'ARS' || cleanTo === 'ARS') {
+        const arsToUsdRate = await fetchARSHistorical(date);
+        if (cleanFrom === 'ARS') {
+          const usdToTarget = await fetchExchangeRate(date, 'USD', cleanTo);
+          rate = (1 / arsToUsdRate) * usdToTarget;
+        } else {
+          const sourceToUsd = await fetchExchangeRate(date, cleanFrom, 'USD');
+          rate = sourceToUsd * arsToUsdRate;
+        }
+      } else {
+        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${cleanFrom}`);
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+        rate = data.rates[cleanTo];
+      }
+
+      if (rate && !isNaN(rate) && rate !== 0) {
+        setExchangeRates(prev => ({ ...prev, [cacheKey]: rate }));
+        return rate;
+      }
+    } catch (error) {
+      console.warn(`Error en conversión ${cleanFrom} -> ${cleanTo}`);
+    }
+    return 1;
+  };
+
+  const convertAmount = async (amount, from, to, date) => {
+    if (from === to) return amount;
+    const rate = await fetchExchangeRate(date, from, to);
+    return amount * rate;
+  };
   const [transactions, setTransactions] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem('balances_theme') || 'dark');
   const [language, setLanguage] = useState(() => localStorage.getItem('balances_lang') || 'es');
@@ -156,7 +212,11 @@ export const AppProvider = ({ children }) => {
       language,
       toggleLanguage,
       t,
-      loading
+      loading,
+      displayCurrency,
+      setDisplayCurrency,
+      fetchExchangeRate,
+      convertAmount
     }}>
       {!loading && children}
     </AppContext.Provider>
