@@ -100,12 +100,12 @@ export default async function handler(req, res) {
     };
 
     await transporter.sendMail(mailOptions);
-    return { success: true };
+    return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error sending reset email:', error);
     if (error.code === 'auth/user-not-found') {
-      return { success: false, error: 'user-not-found' };
+      return res.status(404).json({ success: false, error: 'user-not-found' });
     }
-    return { success: false, error: error.message };
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
