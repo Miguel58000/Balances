@@ -84,12 +84,13 @@ export const AppProvider = ({ children }) => {
             const sourceToUsd = await fetchExchangeRate(dateStr, cleanFrom, 'USD');
             rate = sourceToUsd * arsToUsdRate;
           }
-        } else {
-          const response = await fetch(`https://api.exchangerate-api.com/v4/${dateStr}/${cleanFrom}`);
-          if (!response.ok) throw new Error('API Error');
-          const data = await response.json();
-          rate = data.rates[cleanTo];
-        }
+         } else {
+           const apiUrl = `/api/exchange-rate?date=${dateStr}&from=${cleanFrom}&to=${cleanTo}`;
+           const response = await fetch(apiUrl);
+           if (!response.ok) throw new Error('API Error');
+           const data = await response.json();
+           rate = data.rates[cleanTo];
+         }
 
         if (rate && !isNaN(rate) && rate !== 0) {
           // Redondear tasa a 4 decimales para minimizar errores de punto flotante

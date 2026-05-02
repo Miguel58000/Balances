@@ -12,13 +12,37 @@ const AuthPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError(t('invalidEmail') || 'Invalid email format');
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError(t('passwordTooShort') || 'Password must be at least 6 characters');
+      return;
+    }
+
     if (isLogin) {
       const res = await login(formData.email, formData.password);
       if (!res.success) setError(t('invalidCredentials'));
     } else {
       const res = await register(formData.name, formData.email, formData.password);
-      if (!res.success) setError(t('userExists'));
+      if (!res.success) {
+        // Handle specific Firebase errors
+        if (res.error?.includes('email-already-in-use')) {
+          setError(t('emailAlreadyInUse') || 'Email already in use');
+        } else if (res.error?.includes('weak-password')) {
+          setError(t('weakPassword') || 'Password should be at least 6 characters');
+        } else if (res.error?.includes('invalid-email')) {
+          setError(t('invalidEmail') || 'Invalid email format');
+        } else {
+          setError(res.error || t('userExists'));
+        }
+      }
     }
   };
 

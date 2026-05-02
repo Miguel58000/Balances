@@ -375,14 +375,14 @@ const Dashboard = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-        {/* Expenses Chart */}
+         {/* Expenses Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <PieChartIcon size={20} color="var(--danger)" />
             <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('byCategory')}</h3>
           </div>
 
-          <div style={{ height: '360px', width: '100%' }}>
+          <div style={{ height: '360px', width: '100%', minHeight: '360px' }}>
             {stats.expenseChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -436,14 +436,14 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Income Chart */}
+         {/* Income Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <PieChartIcon size={20} color="var(--success)" />
             <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('incomeByCategory')}</h3>
           </div>
 
-          <div style={{ height: '360px', width: '100%' }}>
+          <div style={{ height: '360px', width: '100%', minHeight: '360px' }}>
             {stats.incomeChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
