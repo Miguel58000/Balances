@@ -56,9 +56,9 @@ const Footer = () => {
                    flexWrap: 'wrap',
                    justifyContent: 'center'
                  }}>
-                    <span>{t('version')} 1.9.0</span>
-                    <span className="desktop-only">•</span>
-                    <span>{t('lastUpdate')}: 02/05/2026</span>
+                      <span>{t('version')} 1.9.1</span>
+                      <span className="desktop-only">•</span>
+                      <span>{t('lastUpdate')}: 02/05/2026</span>
                  </div>
             </div>
           </div>

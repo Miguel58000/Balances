@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.9.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.9.1-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -55,6 +55,13 @@
 - `src/index.css`: Sistema de diseño global y variables de tema.
 
 ## 📜 Historial de Versiones
+
+### v1.9.1 (02/05/2026)
+- **Recuperación de Contraseña por Email**: Implementación completa de flujo de reset de contraseña mediante enlace enviado por correo (nodemailer + Firebase Admin). Incluye página de reset con validación de coincidencia de contraseñas y redirección automática al login.
+- **Backend API**: Servidor Express con nodemailer para envío de emails, verificación de usuarios mediante Firebase Admin, y soporte para dominios de producción (Vercel) y desarrollo local.
+- **Mensajes de Éxito Visuales**: Iconografía de CheckCircle en mensajes de confirmación (Auth y Reset) con estilo deGlassmorphism consistente.
+- **Mejora de Seguridad**: Service Account de Firebase manejado como archivo local y variable de entorno, excluido del repositorio via `.gitignore`.
+- **Actualización de Dependencias**: Agregadas `firebase-admin`, `nodemailer`, `express`, `cors`, `dotenv`.
 
 ### v1.9.0 (02/05/2026)
 - **Solución CORS Histórico**: Implementación de proxy Vercel (`/api/exchange-rate`) para acceder a `exchangerate-api.com` sin restricciones CORS, permitiendo tasas de cambio históricas precisas.
