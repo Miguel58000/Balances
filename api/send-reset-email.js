@@ -50,10 +50,12 @@ export default async function handler(req, res) {
     await auth.getUserByEmail(email);
 
     // Generar enlace de restablecimiento
-    const baseUrl = process.env.APP_URL || 'http://localhost:5173';
+    const baseUrl = process.env.APP_URL;
+    if (!baseUrl) {
+      throw new Error('APP_URL environment variable is not set');
+    }
     const actionCodeSettings = {
       url: `${baseUrl}/reset-password`,
-      continueUrl: `${baseUrl}/reset-password`, // Redirige aquí después de verificar en Firebase
       handleCodeInApp: true,
     };
     const resetLink = await auth.generatePasswordResetLink(email, actionCodeSettings);
