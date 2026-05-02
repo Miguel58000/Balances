@@ -16,8 +16,13 @@ let adminAuth;
 const initAdmin = () => {
   if (adminApp) return { app: adminApp, auth: adminAuth };
 
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || join(__dirname, '..', 'firebase-service-account.json');
-  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || join(__dirname, '..', 'firebase-service-account.json');
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  }
 
   adminApp = initializeApp({
     credential: cert(serviceAccount)
