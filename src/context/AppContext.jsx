@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { translations } from '../constants/translations';
 import { auth, db } from '../firebase';
 import {
@@ -6,7 +6,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile
+  updateProfile,
+  verifyPasswordResetCode,
+  confirmPasswordReset
 } from 'firebase/auth';
 import {
   collection,
@@ -45,7 +47,7 @@ export const AppProvider = ({ children }) => {
       const rate = data.venta || 900;
       localStorage.setItem(storageKey, rate.toString());
       return rate;
-    } catch (e) {
+    } catch {
       // Fallback: tasa guardada más reciente (hoy)
       const today = new Date().toISOString().split('T')[0];
       const todayRate = localStorage.getItem(`ars_rate_${today}`);
@@ -103,7 +105,7 @@ export const AppProvider = ({ children }) => {
 
       pendingFetches.current[cacheKey] = fetchPromise;
       return await fetchPromise;
-    } catch (error) {
+    } catch {
       console.warn(`Error en conversión ${cleanFrom} -> ${cleanTo}`);
       return 1;
     } finally {
@@ -203,6 +205,46 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => signOut(auth);
 
+  const sendPasswordReset = async (email) => {
+    console.log('Sending password reset to:', email);
+    try {
+      const response = await fetch('/api/send-reset-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+      if (data.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const verifyResetCode = async (code) => {
+    try {
+      const email = await verifyPasswordResetCode(auth, code);
+      return { success: true, email };
+    } catch (error) {
+      return { success: false, error: error.code || error.message };
+    }
+  };
+
+  const confirmPasswordResetCode = async (code, newPassword) => {
+    try {
+      await confirmPasswordReset(auth, code, newPassword);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   const addTransaction = async (tx) => {
     if (!currentUser) return;
     try {
@@ -252,7 +294,10 @@ export const AppProvider = ({ children }) => {
       displayCurrency,
       setDisplayCurrency,
       fetchExchangeRate,
-      convertAmount
+      convertAmount,
+      sendPasswordReset,
+      verifyResetCode,
+      confirmPasswordResetCode
     }}>
       {!loading && children}
     </AppContext.Provider>

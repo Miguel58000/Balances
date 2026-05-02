@@ -1,9 +1,9 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './context/AppContext';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import LoadingScreen from './components/layout/LoadingScreen';
@@ -29,25 +29,29 @@ function App() {
 
   return (
     <Routes>
-      <Route 
-        path="/auth" 
-        element={!currentUser ? <AuthPage /> : <Navigate to="/" />} 
+      <Route
+        path="/auth"
+        element={!currentUser ? <AuthPage /> : <Navigate to="/" />}
       />
-      <Route 
-        path="/" 
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
+      />
+      <Route
+        path="/"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/transactions" 
+      <Route
+        path="/transactions"
         element={
           <ProtectedRoute>
             <Transactions />
           </ProtectedRoute>
-        } 
+        }
       />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

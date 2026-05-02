@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Wallet, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mail, Lock, User, Wallet, ArrowLeft, CheckCircle } from 'lucide-react';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
-  const { login, register, t, toggleLanguage, language } = useApp();
+  const [success, setSuccess] = useState('');
+  const { login, register, sendPasswordReset, t, toggleLanguage, language } = useApp();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,7 +48,36 @@ const AuthPage = () => {
     }
   };
 
-  return (
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError(t('invalidEmail') || 'Invalid email format');
+      return;
+    }
+
+    const res = await sendPasswordReset(formData.email);
+    if (res.success) {
+      setSuccess(t('resetLinkSent') || 'Reset link sent. Check your email');
+      // No cerramos automáticamente, que el usuario vea el mensaje
+    } else {
+      if (res.error === 'user-not-found') {
+        setError(t('emailNotFound') || 'Email not registered');
+      } else {
+        setError(res.error || t('errorSendingResetEmail') || 'Error sending reset email');
+      }
+    }
+  };
+
+  const handleBack = () => {
+    setShowForgotPassword(false);
+    setError('');
+    setSuccess('');
+  };
+
+   return (
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -56,7 +87,7 @@ const AuthPage = () => {
       position: 'relative'
     }}>
       {/* Language toggle for non-logged users */}
-      <button 
+      <button
         onClick={toggleLanguage}
         style={{
           position: 'absolute',
@@ -88,10 +119,10 @@ const AuthPage = () => {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ 
-            width: '64px', 
-            height: '64px', 
-            borderRadius: '16px', 
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
             background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
             margin: '0 auto 24px',
             display: 'flex',
@@ -104,12 +135,15 @@ const AuthPage = () => {
           </div>
           <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '8px' }}>Balances</h1>
           <p style={{ color: 'var(--text-muted)' }}>
-            {isLogin ? t('welcome') : t('createAccount')}
+            {showForgotPassword
+              ? t('forgotPassword') || 'Recover your account'
+              : isLogin ? t('welcome') : t('createAccount')
+            }
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {!isLogin && (
+        <form onSubmit={showForgotPassword ? handleForgotPassword : handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {!showForgotPassword && !isLogin && (
             <div className="input-group">
               <label htmlFor="name">{t('fullName')}</label>
               <div style={{ position: 'relative' }}>
@@ -145,28 +179,31 @@ const AuthPage = () => {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={showForgotPassword && false}
               />
             </div>
           </div>
 
-          <div className="input-group">
-            <label htmlFor="password">{t('password')}</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                className="input-control"
-                style={{ paddingLeft: '40px' }}
-                placeholder="••••••••"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+          {!showForgotPassword && (
+            <div className="input-group">
+              <label htmlFor="password">{t('password')}</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  className="input-control"
+                  style={{ paddingLeft: '40px' }}
+                  placeholder="••••••••"
+                  required={!showForgotPassword}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <motion.div
@@ -178,27 +215,96 @@ const AuthPage = () => {
             </motion.div>
           )}
 
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ 
+                color: '#22c55e', 
+                fontSize: '0.95rem', 
+                textAlign: 'center', 
+                background: 'rgba(34, 197, 94, 0.15)', 
+                padding: '12px', 
+                borderRadius: '8px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px', 
+                fontWeight: '500',
+                border: '1px solid rgba(34, 197, 94, 0.3)'
+              }}
+            >
+              <CheckCircle size={18} />
+              {success}
+            </motion.div>
+          )}
+
           <button type="submit" className="btn btn-primary" style={{ padding: '14px', marginTop: '10px' }}>
-            {isLogin ? t('login') : t('signup')}
+            {showForgotPassword
+              ? t('sendResetLink') || 'Send Reset Link'
+              : isLogin ? t('login') : t('signup')
+            }
           </button>
         </form>
 
         <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '0.95rem' }}>
-          <span style={{ color: 'var(--text-dim)' }}>
-            {isLogin ? (language === 'es' ? '¿No tienes cuenta?' : "Don't have an account?") : (language === 'es' ? '¿Ya tienes cuenta?' : "Already have an account?")}
-          </span>
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            style={{ 
-              background: 'none', 
-              color: 'var(--primary)', 
-              fontWeight: '600', 
-              marginLeft: '8px',
-              textDecoration: 'underline'
-            }}
-          >
-            {isLogin ? t('signup') : t('login')}
-          </button>
+          {showForgotPassword ? (
+            <button
+              onClick={handleBack}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                margin: '0 auto'
+              }}
+            >
+              <ArrowLeft size={16} />
+              {t('login') || 'Back to Login'}
+            </button>
+          ) : (
+            <>
+              <span style={{ color: 'var(--text-dim)' }}>
+                {isLogin
+                  ? (language === 'es' ? '¿No tienes cuenta?' : "Don't have an account?")
+                  : (language === 'es' ? '¿Ya tienes cuenta?' : "Already have an account?")}
+              </span>
+              <button
+                onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+                style={{
+                  background: 'none',
+                  color: 'var(--primary)',
+                  fontWeight: '600',
+                  marginLeft: '8px',
+                  textDecoration: 'underline'
+                }}
+              >
+                {isLogin ? t('signup') : t('login')}
+              </button>
+
+                {isLogin && (
+                  <div style={{ marginTop: '16px' }}>
+                    <button
+                      onClick={() => { setShowForgotPassword(true); setError(''); setSuccess(''); }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {t('forgotPassword') || 'Forgot Password?'}
+                    </button>
+                  </div>
+                )}
+            </>
+          )}
         </div>
       </motion.div>
 
@@ -208,6 +314,5 @@ const AuthPage = () => {
     </div>
   );
 };
-
 
 export default AuthPage;
