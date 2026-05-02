@@ -196,26 +196,28 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
                       style={{ position: 'fixed', inset: 0, zIndex: 100 }}
                       onClick={() => setShowCurMenu(false)}
                     />
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="glass-card"
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '8px',
-                        zIndex: 110,
-                        maxHeight: '250px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '8px',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-                        border: '1px solid var(--border-glass)'
-                      }}
-                    >
+                       <motion.div
+                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                         animate={{ opacity: 1, y: 0, scale: 1 }}
+                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                         className="glass-card"
+                         style={{
+                           position: 'absolute',
+                           top: '100%',
+                           left: 0,
+                           right: 'auto',
+                           marginTop: '8px',
+                           zIndex: 110,
+                           maxHeight: '250px',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           padding: '8px',
+                           boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                           border: '1px solid var(--border-glass)',
+                           minWidth: '260px',
+                           maxWidth: '90vw'
+                         }}
+                       >
                       <input
                         type="text"
                         className="input-control"

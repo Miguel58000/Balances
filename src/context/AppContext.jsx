@@ -25,7 +25,7 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [displayCurrency, setDisplayCurrency] = useState('USD');
+   const [displayCurrency, setDisplayCurrency] = useState('ARS');
   const [exchangeRates, setExchangeRates] = useState({});
   const pendingFetches = useRef({});
 

@@ -16,6 +16,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import TransactionForm from '../components/transactions/TransactionForm';
+import { CURRENCIES } from '../constants/currencies';
 
 const Transactions = () => {
   const { transactions, deleteTransaction, t } = useApp();
@@ -25,9 +26,11 @@ const Transactions = () => {
   const [expandedId, setExpandedId] = useState(null);
   const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [showCatMenu, setShowCatMenu] = useState(false);
+  const [showCurMenu, setShowCurMenu] = useState(false);
   const [filters, setFilters] = useState({
     type: 'all',
     category: 'all',
+    currency: 'all',
     startDate: '',
     endDate: '',
     search: ''
@@ -73,6 +76,7 @@ const Transactions = () => {
     return transactions.filter(tx => {
       const matchType = filters.type === 'all' || tx.type === filters.type;
       const matchCategory = filters.category === 'all' || tx.category === filters.category;
+      const matchCurrency = filters.currency === 'all' || tx.currency === filters.currency;
       const matchSearch = tx.title.toLowerCase().includes(filters.search.toLowerCase()) ||
         (tx.description || '').toLowerCase().includes(filters.search.toLowerCase());
 
@@ -80,7 +84,7 @@ const Transactions = () => {
       const matchStart = !filters.startDate || txDate >= new Date(filters.startDate);
       const matchEnd = !filters.endDate || txDate <= new Date(filters.endDate);
 
-      return matchType && matchCategory && matchSearch && matchStart && matchEnd;
+      return matchType && matchCategory && matchCurrency && matchSearch && matchStart && matchEnd;
     });
   }, [transactions, filters]);
 
@@ -268,11 +272,13 @@ const Transactions = () => {
                           right: 0,
                           marginTop: '8px',
                           zIndex: 110,
-                          maxHeight: '300px',
+                          maxHeight: '250px',
                           overflowY: 'auto',
                           padding: '8px',
                           boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-                          border: '1px solid var(--border-glass)'
+                          border: '1px solid var(--border-glass)',
+                          minWidth: '250px',
+                          maxWidth: '90vw'
                         }}
                       >
                         {categoryOptions.map(cat => (
@@ -296,7 +302,8 @@ const Transactions = () => {
                             }}
                             onClick={() => {
                               setFilters({ ...filters, category: cat.id });
-                              setShowCatMenu(false);
+                setShowCatMenu(false);
+                setShowCurMenu(false);
                             }}
                           >
                             {cat.label}
@@ -336,6 +343,7 @@ const Transactions = () => {
                 setFilters({
                   type: 'all',
                   category: 'all',
+                  currency: 'all',
                   startDate: '',
                   endDate: '',
                   search: ''
@@ -359,8 +367,94 @@ const Transactions = () => {
               <RotateCcw size={16} />
               <span style={{ fontSize: '0.9rem' }}>{t('clearFilters')}</span>
             </button>
+            </div>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label>{t('currency')}</label>
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="input-control"
+                  style={{
+                    textAlign: 'left',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingLeft: '16px'
+                  }}
+                  onClick={() => setShowCurMenu(!showCurMenu)}
+                >
+                  <span>{filters.currency === 'all' ? t('all') : filters.currency}</span>
+                  <ChevronDown size={18} style={{
+                    transform: showCurMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s'
+                  }} />
+                </button>
+
+                <AnimatePresence>
+                  {showCurMenu && (
+                    <>
+                      <div
+                        style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+                        onClick={() => setShowCurMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="glass-card"
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          marginTop: '8px',
+                          zIndex: 110,
+                          maxHeight: '250px',
+                          overflowY: 'auto',
+                          padding: '8px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                          border: '1px solid var(--border-glass)',
+                          minWidth: '250px',
+                          maxWidth: '90vw'
+                        }}
+                      >
+                        {[
+                          { id: 'all', label: t('all') },
+                          ...CURRENCIES.map(c => ({ id: c.code, label: `${c.code} - ${c.name}` }))
+                        ].map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            className="btn-option"
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '10px 16px',
+                              borderRadius: '8px',
+                              background: filters.currency === opt.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                              color: filters.currency === opt.id ? 'var(--primary)' : 'var(--text-main)',
+                              fontSize: '0.9rem',
+                              marginBottom: '2px',
+                              border: 'none',
+                              display: 'block',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onClick={() => {
+                              setFilters({ ...filters, currency: opt.id });
+                              setShowCurMenu(false);
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
-        </div>
       </div>
 
       {/* Transactions List */}
@@ -435,7 +529,7 @@ const Transactions = () => {
                           fontWeight: '700',
                           color: transaction.type === 'income' ? 'var(--success)' : 'var(--text-main)'
                         }}>
-                          {transaction.type === 'income' ? '+' : '-'}$ {transaction.amount.toLocaleString('es-AR', { useGrouping: false, minimumFractionDigits: 2 })}
+                           {transaction.type === 'income' ? '+' : '-'}$ {transaction.amount.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })}
                           <span className="transaction-currency">{transaction.currency}</span>
                         </div>
                       </td>
@@ -636,7 +730,7 @@ const Transactions = () => {
 
         .type-category-filters {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(3, 1fr);
           gap: 16px;
         }
 
