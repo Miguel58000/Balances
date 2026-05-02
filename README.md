@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.8.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.9.0-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -55,6 +55,17 @@
 - `src/index.css`: Sistema de diseño global y variables de tema.
 
 ## 📜 Historial de Versiones
+
+### v1.9.0 (02/05/2026)
+- **Solución CORS Histórico**: Implementación de proxy Vercel (`/api/exchange-rate`) para acceder a `exchangerate-api.com` sin restricciones CORS, permitiendo tasas de cambio históricas precisas.
+- **Formato Numérico Argentino**: Los montos ahora se muestran con puntos como separador de miles (ej: `1.234,56`) en todas las vistas, mejorando la legibilidad local.
+- **Filtro por Moneda**: Nuevo filtro en la lista de transacciones para filtrar por moneda específica (ARS, USD, EUR, etc.), con selector integrado junto a tipo y categoría.
+- **Moneda Predeterminada ARS**: Peso argentino establecido como moneda por defecto en todos los selectores (formulario, dashboard y filtros donde corresponda).
+- **Validación de Registro Mejorada**: Frontend valida formato de email (regex) y contraseña mínima (6 caracteres) antes de llamar a Firebase, mostrando errores específicos al usuario.
+- **Dashboard Responsive Mejorado**: Grid de 4 balances principales ahora usa `repeat(auto-fit, minmax(320px, 1fr))` para adaptarse a 3 columnas en desktop, 2 en tablets, 1 en móvil.
+- **Alineación de Niveles Históricos**: En el Resumen Histórico (tabla de períodos), moneda y número ahora se muestran siempre en una misma línea (`whiteSpace: nowrap`).
+- **Intercambio de Controles**: El botón "Limpiar Filtros" se movió a la posición del selector de moneda, y el selector de moneda se ubicó en la posición del botón, mejorando el flujo de UX.
+- **Corrección de Advertencias de Gráficos**: Solucionada advertencia de dimensiones -1 en Recharts agregando `minHeight` a los contenedores de gráficos.
 
 ### v1.8.1 (30/04/2026)
 - **Motor de Conversión Mejorado**: Redondeo consistente a 2 decimales en todos los montos convertidos. Tasas de cambio redondeadas a 4 decimales para minimizar errores de punto flotante.

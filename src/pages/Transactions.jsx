@@ -337,6 +337,95 @@ const Transactions = () => {
             </div>
           </div>
 
+          {/* Filtro de Moneda - movido aquí */}
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label>{t('currency')}</label>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="input-control"
+                style={{
+                  textAlign: 'left',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingLeft: '16px'
+                }}
+                onClick={() => setShowCurMenu(!showCurMenu)}
+              >
+                <span>{filters.currency === 'all' ? t('all') : filters.currency}</span>
+                <ChevronDown size={18} style={{
+                  transform: showCurMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.3s'
+                }} />
+              </button>
+
+              <AnimatePresence>
+                {showCurMenu && (
+                  <>
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+                      onClick={() => setShowCurMenu(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="glass-card"
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '8px',
+                        zIndex: 110,
+                        maxHeight: '250px',
+                        overflowY: 'auto',
+                        padding: '8px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                        border: '1px solid var(--border-glass)',
+                        minWidth: '250px',
+                        maxWidth: '90vw'
+                      }}
+                    >
+                      {[
+                        { id: 'all', label: t('all') },
+                        ...CURRENCIES.map(c => ({ id: c.code, label: `${c.code} - ${c.name}` }))
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className="btn-option"
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
+                            background: filters.currency === opt.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                            color: filters.currency === opt.id ? 'var(--primary)' : 'var(--text-main)',
+                            fontSize: '0.9rem',
+                            marginBottom: '2px',
+                            border: 'none',
+                            display: 'block',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onClick={() => {
+                            setFilters({ ...filters, currency: opt.id });
+                            setShowCurMenu(false);
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Botón Limpiar Filtros - movido aquí */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => {
@@ -350,6 +439,7 @@ const Transactions = () => {
                 });
                 setShowTypeMenu(false);
                 setShowCatMenu(false);
+                setShowCurMenu(false);
               }}
               className="btn"
               style={{
@@ -367,93 +457,7 @@ const Transactions = () => {
               <RotateCcw size={16} />
               <span style={{ fontSize: '0.9rem' }}>{t('clearFilters')}</span>
             </button>
-            </div>
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label>{t('currency')}</label>
-              <div style={{ position: 'relative' }}>
-                <button
-                  type="button"
-                  className="input-control"
-                  style={{
-                    textAlign: 'left',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingLeft: '16px'
-                  }}
-                  onClick={() => setShowCurMenu(!showCurMenu)}
-                >
-                  <span>{filters.currency === 'all' ? t('all') : filters.currency}</span>
-                  <ChevronDown size={18} style={{
-                    transform: showCurMenu ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.3s'
-                  }} />
-                </button>
-
-                <AnimatePresence>
-                  {showCurMenu && (
-                    <>
-                      <div
-                        style={{ position: 'fixed', inset: 0, zIndex: 100 }}
-                        onClick={() => setShowCurMenu(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="glass-card"
-                        style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          marginTop: '8px',
-                          zIndex: 110,
-                          maxHeight: '250px',
-                          overflowY: 'auto',
-                          padding: '8px',
-                          boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-                          border: '1px solid var(--border-glass)',
-                          minWidth: '250px',
-                          maxWidth: '90vw'
-                        }}
-                      >
-                        {[
-                          { id: 'all', label: t('all') },
-                          ...CURRENCIES.map(c => ({ id: c.code, label: `${c.code} - ${c.name}` }))
-                        ].map(opt => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            className="btn-option"
-                            style={{
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '10px 16px',
-                              borderRadius: '8px',
-                              background: filters.currency === opt.id ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                              color: filters.currency === opt.id ? 'var(--primary)' : 'var(--text-main)',
-                              fontSize: '0.9rem',
-                              marginBottom: '2px',
-                              border: 'none',
-                              display: 'block',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onClick={() => {
-                              setFilters({ ...filters, currency: opt.id });
-                              setShowCurMenu(false);
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
+          </div>
           </div>
       </div>
 

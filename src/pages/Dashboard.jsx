@@ -287,7 +287,7 @@ const Dashboard = () => {
       {/* Main Stats Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         gap: '24px',
         marginBottom: '40px'
       }}>
@@ -301,7 +301,7 @@ const Dashboard = () => {
               {t('income')}
             </span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+          <div style={{ fontSize: '2rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
             {displayCurrency} {stats.income.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -316,7 +316,7 @@ const Dashboard = () => {
               {t('expenses')}
             </span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+          <div style={{ fontSize: '2rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
             {displayCurrency} {stats.expense.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -329,7 +329,7 @@ const Dashboard = () => {
             </div>
             <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('netBalance')}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700', color: stats.balance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+          <div style={{ fontSize: '2rem', fontWeight: '700', color: stats.balance >= 0 ? 'var(--success)' : 'var(--danger)', whiteSpace: 'nowrap' }}>
             {stats.balance >= 0 ? '+' : ''}{displayCurrency} {stats.balance.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -342,7 +342,7 @@ const Dashboard = () => {
             </div>
             <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('monthlyAvg')}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+          <div style={{ fontSize: '2rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
             {displayCurrency} {Math.round(stats.avg).toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -353,10 +353,10 @@ const Dashboard = () => {
             <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <TrendingUp size={24} />
             </div>
-            <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('savingsRate')}</span>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('savingsRate')}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--success)' }}>
-             {stats.savingsRate.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+          <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--success)', whiteSpace: 'nowrap' }}>
+            {stats.savingsRate.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
           </div>
         </div>
 
@@ -366,16 +366,16 @@ const Dashboard = () => {
             <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Activity size={24} />
             </div>
-            <span style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{t('transactions')}</span>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('transactions')}</span>
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+          <div style={{ fontSize: '2rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
             {stats.count}
           </div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-         {/* Expenses Chart */}
+        {/* Expenses Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <PieChartIcon size={20} color="var(--danger)" />
@@ -428,7 +428,7 @@ const Dashboard = () => {
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                      {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.expense > 0 ? ((item.value / stats.expense) * 100).toFixed(1) : 0}%)
+                    {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.expense > 0 ? ((item.value / stats.expense) * 100).toFixed(1) : 0}%)
                   </div>
                 </div>
               ))}
@@ -436,7 +436,7 @@ const Dashboard = () => {
           )}
         </div>
 
-         {/* Income Chart */}
+        {/* Income Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <PieChartIcon size={20} color="var(--success)" />
@@ -489,7 +489,7 @@ const Dashboard = () => {
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                      {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.income > 0 ? ((item.value / stats.income) * 100).toFixed(1) : 0}%)
+                    {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.income > 0 ? ((item.value / stats.income) * 100).toFixed(1) : 0}%)
                   </div>
                 </div>
               ))}
@@ -510,31 +510,36 @@ const Dashboard = () => {
               { id: 'quarter', label: t('quarterly'), sub: t('last3') },
               { id: 'semester', label: t('semiannual'), sub: t('last6') },
               { id: 'year', label: t('annual'), sub: t('last12') }
-            ].map(p => (
-              <div key={p.id} className="glass" style={{
-                padding: '16px',
-                borderRadius: '16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ fontWeight: '500' }}>
-                  {t('balanceOf')} {p.label}
-                </span>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{
-                    fontWeight: '700',
-                    fontSize: '1.1rem',
-                    color: periodBalances[p.id] >= 0 ? 'var(--success)' : 'var(--danger)'
-                  }}>
-                    {periodBalances[p.id] >= 0 ? '+' : ''}{displayCurrency} {periodBalances[p.id].toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                    {p.sub}
+            ].map(p => {
+              const amount = periodBalances[p.id];
+              const formatted = amount.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              const isPositive = amount >= 0;
+              return (
+                <div key={p.id} className="glass" style={{
+                  padding: '16px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{ fontWeight: '500' }}>
+                    {t('balanceOf')} {p.label}
+                  </span>
+                  <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <div style={{
+                      fontWeight: '700',
+                      fontSize: '1.1rem',
+                      color: isPositive ? 'var(--success)' : 'var(--danger)'
+                    }}>
+                      {isPositive ? '+' : ''}{displayCurrency} {formatted}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                      {p.sub}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

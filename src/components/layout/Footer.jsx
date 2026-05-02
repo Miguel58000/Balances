@@ -37,29 +37,29 @@ const Footer = () => {
             borderTop: '1px solid var(--border-glass)',
             gap: '12px'
           }}>
-            <div style={{
-              width: '100%',
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '16px',
-              color: 'var(--text-dim)',
-              fontSize: '0.85rem',
-              textAlign: 'center'
-            }}>
-              <span>© 2026 Miguel Rodríguez. {t('rights')}.</span>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-              }}>
-                 <span>{t('version')} 1.8.1</span>
-                 <span className="desktop-only">•</span>
-                 <span>{t('lastUpdate')}: 30/04/2026</span>
-              </div>
+                 <div style={{
+                 width: '100%',
+                 display: 'flex',
+                 flexWrap: 'wrap',
+                 justifyContent: 'center',
+                 alignItems: 'center',
+                 gap: '16px',
+                 color: 'var(--text-dim)',
+                 fontSize: '0.85rem',
+                 textAlign: 'center'
+               }}>
+                 <span>© 2026 Miguel Rodríguez. {t('rights')}.</span>
+                 <div style={{
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '12px',
+                   flexWrap: 'wrap',
+                   justifyContent: 'center'
+                 }}>
+                    <span>{t('version')} 1.9.0</span>
+                    <span className="desktop-only">•</span>
+                    <span>{t('lastUpdate')}: 02/05/2026</span>
+                 </div>
             </div>
           </div>
         </div>
