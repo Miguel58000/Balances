@@ -142,7 +142,7 @@ const ResetPasswordPage = () => {
               <CheckCircle size={32} style={{ color: '#22c55e' }} />
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '12px' }}>{t('passwordResetSuccess') || 'Success'}</h2>
-            <p style={{ color: 'var(--text-muted)' }}>{t('login') || 'Redirecting to login...'}</p>
+            <p style={{ color: 'var(--text-muted)' }}>Se te redirigirá a iniciar sesión</p>
           </div>
         ) : (
           <>

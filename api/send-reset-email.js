@@ -43,22 +43,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email required' });
   }
 
-  try {
-    const { auth } = initAdmin();
+   try {
+     const { auth } = initAdmin();
 
-    // Verificar que el usuario existe
-    await auth.getUserByEmail(email);
+     // Verificar que el usuario existe
+     await auth.getUserByEmail(email);
 
-    // Generar enlace de restablecimiento
-    const baseUrl = process.env.APP_URL;
-    if (!baseUrl) {
-      throw new Error('APP_URL environment variable is not set');
-    }
-    const actionCodeSettings = {
-      url: `${baseUrl}/reset-password`,
-      handleCodeInApp: true,
-    };
-    const resetLink = await auth.generatePasswordResetLink(email, actionCodeSettings);
+     // Generar enlace de restablecimiento SIN actionCodeSettings
+     // Usa la URL configurada en Firebase Console (Password reset URL)
+     const resetLink = await auth.generatePasswordResetLink(email);
 
     // Configurar nodemailer
     const transporter = nodemailer.createTransport({

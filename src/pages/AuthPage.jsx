@@ -9,6 +9,7 @@ const AuthPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loadingReset, setLoadingReset] = useState(false);
   const { login, register, sendPasswordReset, t, toggleLanguage, language } = useApp();
 
   const handleSubmit = async (e) => {
@@ -48,28 +49,31 @@ const AuthPage = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError(t('invalidEmail') || 'Invalid email format');
-      return;
-    }
+   const handleForgotPassword = async (e) => {
+     e.preventDefault();
+     setError('');
+     setSuccess('');
+     setLoadingReset(true);
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+     if (!emailRegex.test(formData.email)) {
+       setError(t('invalidEmail') || 'Invalid email format');
+       setLoadingReset(false);
+       return;
+     }
 
-    const res = await sendPasswordReset(formData.email);
-    if (res.success) {
-      setSuccess(t('resetLinkSent') || 'Reset link sent. Check your email');
-      // No cerramos automáticamente, que el usuario vea el mensaje
-    } else {
-      if (res.error === 'user-not-found') {
-        setError(t('emailNotFound') || 'Email not registered');
-      } else {
-        setError(res.error || t('errorSendingResetEmail') || 'Error sending reset email');
-      }
-    }
-  };
+     const res = await sendPasswordReset(formData.email);
+     setLoadingReset(false);
+     if (res.success) {
+       setSuccess(t('resetLinkSent') || 'Reset link sent. Check your email');
+       // No cerramos automáticamente, que el usuario vea el mensaje
+     } else {
+       if (res.error === 'user-not-found') {
+         setError(t('emailNotFound') || 'Email not registered');
+       } else {
+         setError(res.error || t('errorSendingResetEmail') || 'Error sending reset email');
+       }
+     }
+   };
 
   const handleBack = () => {
     setShowForgotPassword(false);
@@ -239,12 +243,22 @@ const AuthPage = () => {
             </motion.div>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{ padding: '14px', marginTop: '10px' }}>
-            {showForgotPassword
-              ? t('sendResetLink') || 'Send Reset Link'
-              : isLogin ? t('login') : t('signup')
-            }
-          </button>
+           <button type="submit" className="btn btn-primary" style={{ padding: '14px', marginTop: '10px' }} disabled={showForgotPassword && loadingReset}>
+             {showForgotPassword ? (
+               loadingReset ? (
+                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                   <motion.div
+                     animate={{ rotate: 360 }}
+                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                     style={{ width: '18px', height: '18px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
+                   />
+                   {t('sending') || 'Sending...'}
+                 </span>
+               ) : (
+                 t('sendResetLink') || 'Send Reset Link'
+               )
+             ) : isLogin ? t('login') || 'Login' : t('signup') || 'Sign Up'}
+           </button>
         </form>
 
         <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '0.95rem' }}>

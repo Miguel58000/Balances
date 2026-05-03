@@ -28,100 +28,89 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
    const [displayCurrency, setDisplayCurrency] = useState('ARS');
-  const [exchangeRates, setExchangeRates] = useState({});
-  const pendingFetches = useRef({});
+   const [exchangeRates, setExchangeRates] = useState({});
+   const pendingFetches = useRef({});
 
-  // Fetch ARS official rate from DolarApi (most reliable for ARS) with localStorage cache
-  const fetchARSHistorical = async (date) => {
-    const dateStr = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
-    const storageKey = `ars_rate_${dateStr}`;
+    const fetchExchangeRate = async (date, from, to) => {
+      const cleanFrom = from?.toUpperCase();
+      const cleanTo = to?.toUpperCase();
+      if (cleanFrom === cleanTo) return 1;
 
-    // Intentar cargar tasa guardada
-    const savedRate = localStorage.getItem(storageKey);
-    if (savedRate) return parseFloat(savedRate);
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      const dateStr = dateObj.toISOString().split('T')[0];
+      const cacheKey = `${dateStr}_${cleanFrom}_${cleanTo}`;
 
-    try {
-      const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
-      if (!response.ok) throw new Error();
-      const data = await response.json();
-      const rate = data.venta || 900;
-      localStorage.setItem(storageKey, rate.toString());
-      return rate;
-    } catch {
-      // Fallback: tasa guardada más reciente (hoy)
-      const today = new Date().toISOString().split('T')[0];
-      const todayRate = localStorage.getItem(`ars_rate_${today}`);
-      if (todayRate) return parseFloat(todayRate);
-      return 900;
-    }
-  };
+      if (exchangeRates[cacheKey]) return exchangeRates[cacheKey];
+      if (pendingFetches.current[cacheKey]) {
+        return pendingFetches.current[cacheKey];
+      }
 
-  const fetchExchangeRate = async (date, from, to) => {
-    const cleanFrom = from?.toUpperCase();
-    const cleanTo = to?.toUpperCase();
-    if (cleanFrom === cleanTo) return 1;
+      try {
+        const fetchPromise = (async () => {
+          try {
+            const url = date
+              ? `https://open.er-api.com/v6/${dateStr}?base=${cleanFrom}&symbols=${cleanTo}`
+              : `https://open.er-api.com/v6/latest?base=${cleanFrom}&symbols=${cleanTo}`;
 
-    // Normalizar fecha a YYYY-MM-DD para cache (ignora hora/minutos)
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    const dateStr = dateObj.toISOString().split('T')[0];
-    const cacheKey = `${dateStr}_${cleanFrom}_${cleanTo}`;
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              const rate = data.rates?.[cleanTo];
+              if (rate && rate > 0) {
+                const roundedRate = Math.round(rate * 10000) / 10000;
+                setExchangeRates(prev => ({ ...prev, [cacheKey]: roundedRate }));
+                return roundedRate;
+              }
+            }
+           } catch {
+           }
 
-    // Retornar del cache si existe
-    if (exchangeRates[cacheKey]) return exchangeRates[cacheKey];
+          const fallback = {
+            'BRL_USD': 0.18, 'USD_BRL': 5.52,
+            'ARS_USD': 0.0012, 'USD_ARS': 850,
+            'EUR_USD': 1.09, 'USD_EUR': 0.92,
+            'GBP_USD': 1.28, 'USD_GBP': 0.78,
+            'MXN_USD': 0.052, 'USD_MXN': 19.2,
+            'CLP_USD': 0.0011, 'USD_CLP': 910,
+            'COP_USD': 0.00025, 'USD_COP': 4000,
+            'PEN_USD': 0.27, 'USD_PEN': 3.7,
+            'ARS_BRL': 0.0036, 'BRL_ARS': 280
+          };
 
-    // Evitar llamadas duplicadas concurrentes
-    if (pendingFetches.current[cacheKey]) {
-      return pendingFetches.current[cacheKey];
-    }
+          const direct = fallback[`${cleanFrom}_${cleanTo}`];
+          if (direct) return direct;
+          const reverse = fallback[`${cleanTo}_${cleanFrom}`];
+          if (reverse) return 1 / reverse;
+          const fUsd = fallback[`${cleanFrom}_USD`];
+          const uTo = fallback[`USD_${cleanTo}`];
+          if (fUsd && uTo) return fUsd * uTo;
 
-    try {
-      const fetchPromise = (async () => {
-        let rate;
-        if (cleanFrom === 'ARS' || cleanTo === 'ARS') {
-          const arsToUsdRate = await fetchARSHistorical(dateStr);
-          if (cleanFrom === 'ARS') {
-            const usdToTarget = await fetchExchangeRate(dateStr, 'USD', cleanTo);
-            rate = (1 / arsToUsdRate) * usdToTarget;
-          } else {
-            const sourceToUsd = await fetchExchangeRate(dateStr, cleanFrom, 'USD');
-            rate = sourceToUsd * arsToUsdRate;
-          }
-         } else {
-           const apiUrl = `/api/exchange-rate?date=${dateStr}&from=${cleanFrom}&to=${cleanTo}`;
-           const response = await fetch(apiUrl);
-           if (!response.ok) throw new Error('API Error');
-           const data = await response.json();
-           rate = data.rates[cleanTo];
-         }
+          return 1;
+        })();
 
-        if (rate && !isNaN(rate) && rate !== 0) {
-          // Redondear tasa a 4 decimales para minimizar errores de punto flotante
-          rate = Math.round(rate * 10000) / 10000;
-          setExchangeRates(prev => ({ ...prev, [cacheKey]: rate }));
-          return rate;
-        }
+        pendingFetches.current[cacheKey] = fetchPromise;
+        return await fetchPromise;
+      } catch {
+        delete pendingFetches.current[cacheKey];
         return 1;
-      })();
+      }
+     };
 
-      pendingFetches.current[cacheKey] = fetchPromise;
-      return await fetchPromise;
-    } catch {
-      console.warn(`Error en conversión ${cleanFrom} -> ${cleanTo}`);
-      return 1;
-    } finally {
-      delete pendingFetches.current[cacheKey];
-    }
-  };
-
-  const convertAmount = async (amount, from, to, date) => {
-    if (from === to) return Math.round(amount * 100) / 100;
-    const rate = await fetchExchangeRate(date, from, to);
-    const converted = amount * rate;
-    return Math.round(converted * 100) / 100;
-  };
+    const convertAmount = async (amount, from, to, date) => {
+     if (from === to) return Math.round(amount * 100) / 100;
+     const rate = await fetchExchangeRate(date, from, to);
+     if (!rate) {
+       return Math.round(amount * 100) / 100;
+     }
+     const converted = amount * rate;
+     return Math.round(converted * 100) / 100;
+   };
   const [transactions, setTransactions] = useState([]);
   const [theme, setTheme] = useState(() => localStorage.getItem('balances_theme') || 'dark');
-  const [language, setLanguage] = useState(() => localStorage.getItem('balances_lang') || 'es');
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem('balances_lang');
+    return saved === 'en' || saved === 'es' ? saved : 'es';
+  });
 
   // Auth Listener
   useEffect(() => {
@@ -177,7 +166,7 @@ export const AppProvider = ({ children }) => {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   const toggleLanguage = () => setLanguage(prev => prev === 'es' ? 'en' : 'es');
-  const t = (key) => translations[language][key] || key;
+  const t = (key) => (translations[language] && translations[language][key]) || key;
 
   const login = async (email, password) => {
     try {
@@ -206,23 +195,19 @@ export const AppProvider = ({ children }) => {
   const logout = () => signOut(auth);
 
   const sendPasswordReset = async (email) => {
-    console.log('Sending password reset to:', email);
     try {
       const response = await fetch('/api/send-reset-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
       if (data.success) {
         return { success: true };
       } else {
         return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error('Fetch error:', error);
       return { success: false, error: error.message };
     }
   };
@@ -245,35 +230,36 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const addTransaction = async (tx) => {
-    if (!currentUser) return;
-    try {
-      await addDoc(collection(db, 'transactions'), {
-        ...tx,
-        userId: currentUser.id,
-        createdAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Error adding transaction: ", error);
-    }
-  };
+   const addTransaction = async (tx) => {
+     if (!currentUser) return;
+     try {
+       await addDoc(collection(db, 'transactions'), {
+         ...tx,
+         userId: currentUser.id,
+         createdAt: new Date().toISOString()
+       });
+     } catch {
+       // ignore
+     }
+   };
 
-  const deleteTransaction = async (id) => {
-    try {
-      await deleteDoc(doc(db, 'transactions', id));
-    } catch (error) {
-      console.error("Error deleting transaction: ", error);
-    }
-  };
+   const deleteTransaction = async (id) => {
+     try {
+       await deleteDoc(doc(db, 'transactions', id));
+     } catch {
+       // ignore
+     }
+   };
 
-  const updateTransaction = async (updatedTx) => {
-    try {
-      const { id, ...data } = updatedTx;
-      await updateDoc(doc(db, 'transactions', id), data);
-    } catch (error) {
-      console.error("Error updating transaction: ", error);
-    }
-  };
+   const updateTransaction = async (updatedTx) => {
+     try {
+       const { id, userId, createdAt, ...data } = updatedTx;
+       if (!id) return;
+       await updateDoc(doc(db, 'transactions', id), data);
+     } catch {
+       // ignore
+     }
+   };
 
   return (
     <AppContext.Provider value={{

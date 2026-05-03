@@ -41,28 +41,37 @@ const Transactions = () => {
   const categoryOptions = useMemo(() => {
     const baseExpense = ['Food', 'Transport', 'Housing', 'Services', 'Entertainment', 'Health', 'Education'];
     const baseIncome = ['Salary', 'Sales', 'Investment', 'Gift'];
+    const COMMON = ['Others']; // Categoría común ya estandarizada
 
-    // Get custom categories from transactions
+    // Custom categories: excluye predefinidas (incluye 'Otros') y COMMON
+    const PREDEFINED = [...baseExpense, ...baseIncome, ...COMMON, 'Otros'];
     const customCats = transactions
       .filter(tx => {
-        const isDefault = [...baseExpense, ...baseIncome].includes(tx.category);
+        const isPredefined = PREDEFINED.includes(tx.category);
         const matchesType = filters.type === 'all' || tx.type === filters.type;
-        return !isDefault && matchesType;
+        return !isPredefined && matchesType;
       })
       .map(tx => tx.category);
 
     const uniqueCustom = [...new Set(customCats)];
 
-    let currentBase = [];
-    if (filters.type === 'expense') currentBase = baseExpense;
-    else if (filters.type === 'income') currentBase = baseIncome;
-    else currentBase = [...baseExpense, ...baseIncome];
+    let baseCategories = [];
+    if (filters.type === 'expense') baseCategories = [...baseExpense, ...COMMON];
+    else if (filters.type === 'income') baseCategories = [...baseIncome, ...COMMON];
+    else baseCategories = [...baseExpense, ...baseIncome, ...COMMON];
+
+    // Normalizar 'Otros' → 'Others' y filtrar los que ya están en baseCategories
+    const normalizedCustom = uniqueCustom
+      .map(cat => cat === 'Otros' ? 'Others' : cat)
+      .filter(cat => !baseCategories.includes(cat));
 
     return [
       { id: 'all', label: t('all') },
-      ...currentBase.map(id => ({ id, label: t(`cat_${id.toLowerCase()}`) || id })),
-      ...uniqueCustom.map(id => ({ id, label: id })),
-      { id: 'Others', label: t('others') }
+      ...baseCategories.map(id => {
+        if (id === 'Others') return { id: 'Others', label: t('others') };
+        return { id, label: t(`cat_${id.toLowerCase()}`) || id };
+      }),
+      ...normalizedCustom.map(id => ({ id, label: id }))
     ];
   }, [filters.type, transactions, t]);
 
@@ -72,21 +81,22 @@ const Transactions = () => {
     { id: 'expense', label: t('expenses') }
   ];
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(tx => {
-      const matchType = filters.type === 'all' || tx.type === filters.type;
-      const matchCategory = filters.category === 'all' || tx.category === filters.category;
-      const matchCurrency = filters.currency === 'all' || tx.currency === filters.currency;
-      const matchSearch = tx.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (tx.description || '').toLowerCase().includes(filters.search.toLowerCase());
+   const filteredTransactions = useMemo(() => {
+     const normalizeCat = (cat) => cat === 'Otros' ? 'Others' : cat;
+     return transactions.filter(tx => {
+       const matchType = filters.type === 'all' || tx.type === filters.type;
+       const matchCategory = filters.category === 'all' || normalizeCat(tx.category) === normalizeCat(filters.category);
+       const matchCurrency = filters.currency === 'all' || tx.currency === filters.currency;
+       const matchSearch = tx.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+         (tx.description || '').toLowerCase().includes(filters.search.toLowerCase());
 
-      const txDate = new Date(tx.date);
-      const matchStart = !filters.startDate || txDate >= new Date(filters.startDate);
-      const matchEnd = !filters.endDate || txDate <= new Date(filters.endDate);
+       const txDate = new Date(tx.date);
+       const matchStart = !filters.startDate || txDate >= new Date(filters.startDate);
+       const matchEnd = !filters.endDate || txDate <= new Date(filters.endDate);
 
-      return matchType && matchCategory && matchCurrency && matchSearch && matchStart && matchEnd;
-    });
-  }, [transactions, filters]);
+       return matchType && matchCategory && matchCurrency && matchSearch && matchStart && matchEnd;
+     });
+   }, [transactions, filters]);
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const currentTransactions = useMemo(() => {
@@ -390,7 +400,7 @@ const Transactions = () => {
                     >
                       {[
                         { id: 'all', label: t('all') },
-                        ...CURRENCIES.map(c => ({ id: c.code, label: `${c.code} - ${c.name}` }))
+                        ...CURRENCIES.map(c => ({ id: c.code, label: `${c.code} - ${t(c.translationKey)}` }))
                       ].map(opt => (
                         <button
                           key={opt.id}

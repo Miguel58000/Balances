@@ -33,110 +33,182 @@ const Dashboard = () => {
   const [convertedTransactions, setConvertedTransactions] = useState([]);
   const [isConverting, setIsConverting] = useState(false);
 
+  // Category definitions
+  const FIXED_EXPENSE_CATS = ['Housing', 'Services'];
+  const FIXED_INCOME_CATS = ['Salary'];
+
   // Handle conversion of all transactions to the display currency
   useEffect(() => {
-    const processTransactions = async () => {
-      setIsConverting(true);
-      const converted = await Promise.all(transactions.map(async (tx) => {
-        const convertedAmount = await convertAmount(tx.amount, tx.currency, displayCurrency, tx.date);
-        return { ...tx, displayAmount: convertedAmount };
-      }));
-      setConvertedTransactions(converted);
-      setIsConverting(false);
-    };
+     const processTransactions = async () => {
+       setIsConverting(true);
+        const converted = await Promise.all(transactions.map(async (tx) => {
+          try {
+            const convertedAmount = await convertAmount(tx.amount, tx.currency, displayCurrency, tx.date);
+            return { ...tx, displayAmount: convertedAmount };
+          } catch {
+            return { ...tx, displayAmount: null, conversionError: true };
+          }
+        }));
+       setConvertedTransactions(converted);
+       setIsConverting(false);
+     };
 
-    processTransactions();
-  }, [transactions, displayCurrency]);
+     if (transactions.length > 0) {
+       processTransactions();
+     } else {
+       setConvertedTransactions([]);
+       setIsConverting(false);
+     }
+   }, [transactions, displayCurrency]);
 
-  // Calculate filtered stats based on convertedTransactions
-  const stats = useMemo(() => {
-    // Aseguramos que solo se calculen estadísticas cuando todas las transacciones estén convertidas
-    if (isConverting || (transactions.length > 0 && convertedTransactions.length !== transactions.length)) return null;
+   // Calculate filtered stats based on convertedTransactions
+   const stats = useMemo(() => {
+     if (isConverting || (transactions.length > 0 && convertedTransactions.length !== transactions.length)) return null;
 
-    let startDate, endDate;
-    const txs = convertedTransactions;
+     let startDate, endDate;
+     const txs = convertedTransactions;
 
-    if (period === 'month') {
-      const [year, month] = viewDate.split('-').map(Number);
-      startDate = new Date(year, month - 1, 1);
-      endDate = new Date(year, month, 0, 23, 59, 59);
-    } else if (period === 'quarter') {
-      startDate = new Date(selectedYear, (selectedSubPeriod - 1) * 3, 1);
-      endDate = new Date(selectedYear, selectedSubPeriod * 3, 0, 23, 59, 59);
-    } else if (period === 'semester') {
-      const sem = Math.min(selectedSubPeriod, 2); // Ensure it's 1 or 2
-      startDate = new Date(selectedYear, (sem - 1) * 6, 1);
-      endDate = new Date(selectedYear, sem * 6, 0, 23, 59, 59);
-    } else { // year
-      startDate = new Date(selectedYear, 0, 1);
-      endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
-    }
+     if (period === 'month') {
+       const [year, month] = viewDate.split('-').map(Number);
+       startDate = new Date(year, month - 1, 1);
+       endDate = new Date(year, month, 0, 23, 59, 59);
+     } else if (period === 'quarter') {
+       startDate = new Date(selectedYear, (selectedSubPeriod - 1) * 3, 1);
+       endDate = new Date(selectedYear, selectedSubPeriod * 3, 0, 23, 59, 59);
+     } else if (period === 'semester') {
+       const sem = Math.min(selectedSubPeriod, 2); // Ensure it's 1 or 2
+       startDate = new Date(selectedYear, (sem - 1) * 6, 1);
+       endDate = new Date(selectedYear, sem * 6, 0, 23, 59, 59);
+     } else { // year
+       startDate = new Date(selectedYear, 0, 1);
+       endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+     }
 
-    const filtered = txs.filter(tx => {
-      const d = new Date(tx.date);
-      return d >= startDate && d <= endDate;
-    });
-
-    const income = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.displayAmount, 0);
-    const expense = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.displayAmount, 0);
-
-    // Savings Rate based on SALARY vs TOTAL EXPENSES (as requested)
-    const salaryIncome = filtered.filter(tx => tx.type === 'income' && tx.category === 'Salary').reduce((sum, tx) => sum + tx.displayAmount, 0);
-
-    const count = filtered.length;
-    const avg = income > 0 || expense > 0 ? (income - expense) / (period === 'year' ? 12 : period === 'semester' ? 6 : period === 'quarter' ? 3 : 1) : 0;
-    const savingsRate = salaryIncome > 0 ? ((salaryIncome - expense) / salaryIncome) * 100 : 0;
-
-    const mapCategories = (data, type) => {
-      const map = {};
-      data.filter(tx => tx.type === type).forEach(tx => {
-        map[tx.category] = (map[tx.category] || 0) + tx.displayAmount;
+      const filtered = txs.filter(tx => {
+        const d = new Date(tx.date);
+        return d >= startDate && d <= endDate && !tx.conversionError;
       });
-      return Object.entries(map)
-        .map(([name, value]) => ({
-          name: {
-            'Food': t('cat_food'),
-            'Transport': t('cat_transport'),
-            'Housing': t('cat_housing'),
-            'Services': t('cat_services'),
-            'Entertainment': t('cat_entertainment'),
-            'Health': t('cat_health'),
-            'Education': t('cat_education'),
-            'Salary': t('cat_salary'),
-            'Sales': t('cat_sales'),
-            'Investment': t('cat_investment'),
-            'Gift': t('cat_gift'),
-            'Others': t('others')
-          }[name] || name,
-          value
-        }))
-        .sort((a, b) => b.value - a.value);
-    };
 
-    return {
-      income,
-      expense,
-      balance: income - expense,
-      count,
-      avg,
-      savingsRate,
-      expenseChartData: mapCategories(filtered, 'expense'),
-      incomeChartData: mapCategories(filtered, 'income')
-    };
-  }, [convertedTransactions, isConverting, transactions, period, viewDate, selectedYear, selectedSubPeriod, t, displayCurrency]);
+     const income = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.displayAmount, 0);
+     const expense = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.displayAmount, 0);
 
-  // Fixed totals for the Historical Summary (always relative to today)
-  const calculateFixedTotal = (months) => {
-    const now = new Date();
-    const startDate = new Date();
-    startDate.setMonth(now.getMonth() - months);
-    const txs = convertedTransactions.length === transactions.length ? convertedTransactions : [];
+      const salaryIncome = filtered.filter(tx => tx.type === 'income' && tx.category === 'Salary').reduce((sum, tx) => sum + tx.displayAmount, 0);
 
-    const filtered = txs.filter(tx => new Date(tx.date) >= startDate);
-    const inc = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.displayAmount, 0);
-    const exp = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.displayAmount, 0);
-    return inc - exp;
-  };
+      const count = filtered.length;
+      const avg = income > 0 || expense > 0 ? (income - expense) / (period === 'year' ? 12 : period === 'semester' ? 6 : period === 'quarter' ? 3 : 1) : 0;
+      const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+
+      // Sumar por categoría
+      const expenseByCategory = {};
+     filtered.filter(tx => tx.type === 'expense').forEach(tx => {
+       expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + tx.displayAmount;
+     });
+
+      const incomeByCategory = {};
+      filtered.filter(tx => tx.type === 'income').forEach(tx => {
+        incomeByCategory[tx.category] = (incomeByCategory[tx.category] || 0) + tx.displayAmount;
+      });
+
+      // Expenses: fixed vs variable
+      const fixedExpenses = FIXED_EXPENSE_CATS.reduce((sum, cat) => sum + (expenseByCategory[cat] || 0), 0);
+      const fixedExpensePercent = expense > 0 ? (fixedExpenses / expense) * 100 : 0;
+      const variableExpenses = expense - fixedExpenses;
+      const variableExpensePercent = expense > 0 ? (variableExpenses / expense) * 100 : 0;
+
+      // Income: fixed vs variable
+      const fixedIncome = FIXED_INCOME_CATS.reduce((sum, cat) => sum + (incomeByCategory[cat] || 0), 0);
+      const fixedIncomePercent = income > 0 ? (fixedIncome / income) * 100 : 0;
+      const variableIncome = income - fixedIncome;
+      const variableIncomePercent = income > 0 ? (variableIncome / income) * 100 : 0;
+
+      // Category name lists for labels (i18n) — solo las que tienen gastos/ingresos en el período
+      const fixedExpenseCategories = FIXED_EXPENSE_CATS
+        .filter(cat => (expenseByCategory[cat] || 0) > 0)
+        .map(cat => cat === 'Others' || cat === 'Otros' ? t('others') : t(`cat_${cat.toLowerCase()}`))
+        .join(', ');
+      const variableExpenseCategories = Object.keys(expenseByCategory)
+        .filter(cat => !FIXED_EXPENSE_CATS.includes(cat) && (expenseByCategory[cat] || 0) > 0)
+        .map(cat => cat === 'Others' || cat === 'Otros' ? t('others') : (t(`cat_${cat.toLowerCase()}`) || cat))
+        .sort((a, b) => a.localeCompare(b))
+        .join(', ');
+      const fixedIncomeCategories = FIXED_INCOME_CATS
+        .filter(cat => (incomeByCategory[cat] || 0) > 0)
+        .map(cat => cat === 'Others' || cat === 'Otros' ? t('others') : t(`cat_${cat.toLowerCase()}`))
+        .join(', ');
+      const variableIncomeCategories = Object.keys(incomeByCategory)
+        .filter(cat => !FIXED_INCOME_CATS.includes(cat) && (incomeByCategory[cat] || 0) > 0)
+        .map(cat => cat === 'Others' || cat === 'Otros' ? t('others') : (t(`cat_${cat.toLowerCase()}`) || cat))
+        .sort((a, b) => a.localeCompare(b))
+        .join(', ');
+
+      const mapCategories = (data, type, total) => {
+       const map = {};
+       data.filter(tx => tx.type === type).forEach(tx => {
+         map[tx.category] = (map[tx.category] || 0) + tx.displayAmount;
+       });
+       return Object.entries(map)
+         .map(([nameKey, value]) => {
+           const displayName = {
+             'Food': t('cat_food'),
+             'Transport': t('cat_transport'),
+             'Housing': t('cat_housing'),
+             'Services': t('cat_services'),
+             'Entertainment': t('cat_entertainment'),
+             'Health': t('cat_health'),
+             'Education': t('cat_education'),
+             'Salary': t('cat_salary'),
+             'Sales': t('cat_sales'),
+             'Investment': t('cat_investment'),
+             'Gift': t('cat_gift')
+           }[nameKey] || (nameKey === 'Others' || nameKey === 'Otros' ? t('others') : nameKey);
+           return {
+             nameKey,
+             name: displayName,
+             value,
+             percent: total > 0 ? (value / total) * 100 : 0
+           };
+         })
+         .sort((a, b) => b.value - a.value);
+     };
+
+      return {
+        income,
+        expense,
+        balance: income - expense,
+        count,
+        avg,
+        savingsRate,
+        fixedExpensePercent,
+        variableExpensePercent,
+        fixedIncomePercent,
+        variableIncomePercent,
+        fixedExpenseCategories,
+        variableExpenseCategories,
+        fixedIncomeCategories,
+        variableIncomeCategories,
+        fixedExpenses,
+        variableExpenses,
+        fixedIncome,
+        variableIncome,
+        expenseChartData: mapCategories(filtered, 'expense', expense),
+        incomeChartData: mapCategories(filtered, 'income', income)
+      };
+   }, [convertedTransactions, isConverting, transactions, period, viewDate, selectedYear, selectedSubPeriod, t, displayCurrency]);
+
+   const calculateFixedTotal = (months) => {
+     const now = new Date();
+     const startDate = new Date();
+     startDate.setMonth(now.getMonth() - months);
+     const txs = convertedTransactions.length === transactions.length ? convertedTransactions : [];
+
+     const filtered = txs.filter(tx => {
+       const validDate = new Date(tx.date) >= startDate;
+       return validDate && !tx.conversionError;
+     });
+     const inc = filtered.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.displayAmount, 0);
+     const exp = filtered.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.displayAmount, 0);
+     return inc - exp;
+   };
 
   const periodBalances = {
     month: calculateFixedTotal(1),
@@ -145,17 +217,27 @@ const Dashboard = () => {
     year: calculateFixedTotal(12)
   };
 
-  const getTitleDate = () => {
-    const dateStr = period === 'month'
-      ? new Date(viewDate + '-02').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' })
-      : period === 'quarter' ? `T${selectedSubPeriod} ${selectedYear}`
-        : period === 'semester' ? `S${selectedSubPeriod} ${selectedYear}`
-          : `${selectedYear}`;
+   const getTitleDate = () => {
+     const dateStr = period === 'month'
+       ? new Date(viewDate + '-02').toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' })
+       : period === 'quarter' ? `T${selectedSubPeriod} ${selectedYear}`
+         : period === 'semester' ? `S${selectedSubPeriod} ${selectedYear}`
+           : `${selectedYear}`;
 
-    return dateStr;
-  };
+     return dateStr;
+   };
 
-  if (!stats) {
+   const getBalanceLabel = () => {
+     const balanceKeys = {
+       month: 'monthlyBalance',
+       quarter: 'quarterlyBalance',
+       semester: 'semiannualBalance',
+       year: 'annualBalance'
+     };
+     return t(balanceKeys[period] || 'monthlyBalance');
+   };
+
+    if (!stats) {
     return (
       <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
         <motion.div
@@ -174,7 +256,7 @@ const Dashboard = () => {
       <div className="page-header" style={{ alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
         <div>
           <h1 className="section-title" style={{ marginBottom: '4px' }}>
-            {t('controlPanel')} - {getTitleDate()}
+            {t('controlPanel')} - {getBalanceLabel()} - {getTitleDate()}
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>{t('overview')}</p>
         </div>
@@ -207,7 +289,7 @@ const Dashboard = () => {
             >
               {CURRENCIES.map(c => (
                 <option key={c.code} value={c.code} style={{ background: '#1a1a1a', color: 'white' }}>
-                  {c.code} - {c.name}
+                  {c.code} - {t(c.translationKey)}
                 </option>
               ))}
             </select>
@@ -362,62 +444,164 @@ const Dashboard = () => {
 
         {/* 6. Total Movimientos */}
         <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Activity size={24} />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <Activity size={20} color="var(--secondary)" />
             <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('transactions')}</span>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
             {stats.count}
           </div>
         </div>
-      </div>
+
+        {/* 7. % Gastos Fijos */}
+        <div className="glass-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingDown size={18} />
+            </div>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('fixedExpenses')}</span>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--success)', whiteSpace: 'nowrap' }}>
+            {stats.fixedExpensePercent.toFixed(1)}%
+          </div>
+          {stats.fixedExpensePercent > 0 && stats.fixedExpenseCategories && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+              {stats.fixedExpenseCategories} • {t('ofTotalExpensesFixed')}
+            </div>
+          )}
+          {/* Detalle de cada categoría fija */}
+          {stats.expenseChartData
+            .filter(item => FIXED_EXPENSE_CATS.includes(item.nameKey))
+            .map(item => (
+              <div key={item.nameKey} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <span style={{ fontWeight: '500', color: 'var(--text-main)' }}>{item.name}</span>: {stats.fixedExpenses > 0 ? ((item.value / stats.fixedExpenses) * 100).toFixed(1) : 0}%
+              </div>
+            ))}
+        </div>
+
+        {/* 8. % Gastos Variables */}
+        <div className="glass-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={18} />
+            </div>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('variableExpenses')}</span>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#f59e0b', whiteSpace: 'nowrap' }}>
+            {stats.variableExpensePercent.toFixed(1)}%
+          </div>
+          {stats.variableExpensePercent > 0 && stats.variableExpenseCategories && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+              {stats.variableExpenseCategories} • {t('ofTotalExpensesVariable')}
+            </div>
+          )}
+          {/* Detalle de cada categoría variable */}
+          {stats.expenseChartData
+            .filter(item => !FIXED_EXPENSE_CATS.includes(item.nameKey))
+            .map(item => (
+              <div key={item.nameKey} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <span style={{ fontWeight: '500', color: 'var(--text-main)' }}>{item.name}</span>: {stats.variableExpenses > 0 ? ((item.value / stats.variableExpenses) * 100).toFixed(1) : 0}%
+              </div>
+            ))}
+        </div>
+
+        {/* 9. % Ingresos Fijos */}
+        <div className="glass-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingDown size={18} />
+            </div>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('fixedIncome')}</span>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', whiteSpace: 'nowrap' }}>
+            {stats.fixedIncomePercent.toFixed(1)}%
+          </div>
+          {stats.fixedIncomePercent > 0 && stats.fixedIncomeCategories && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+              {stats.fixedIncomeCategories} • {t('ofTotalIncomeFixed')}
+            </div>
+          )}
+          {/* Detalle de cada categoría fija */}
+          {stats.incomeChartData
+            .filter(item => FIXED_INCOME_CATS.includes(item.nameKey))
+            .map(item => (
+              <div key={item.nameKey} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <span style={{ fontWeight: '500', color: 'var(--text-main)' }}>{item.name}</span>: {stats.fixedIncome > 0 ? ((item.value / stats.fixedIncome) * 100).toFixed(1) : 0}%
+              </div>
+            ))}
+        </div>
+
+        {/* 10. % Ingresos Variables */}
+        <div className="glass-card" style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.05), rgba(168, 85, 247, 0.05))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(236, 72, 153, 0.1)', color: '#ec4899', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={18} />
+            </div>
+            <span style={{ fontWeight: '600', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t('variableIncome')}</span>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#ec4899', whiteSpace: 'nowrap' }}>
+            {stats.variableIncomePercent.toFixed(1)}%
+          </div>
+          {stats.variableIncomePercent > 0 && stats.variableIncomeCategories && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
+              {stats.variableIncomeCategories} • {t('ofTotalIncomeVariable')}
+            </div>
+          )}
+          {/* Detalle de cada categoría variable */}
+          {stats.incomeChartData
+            .filter(item => !FIXED_INCOME_CATS.includes(item.nameKey))
+            .map(item => (
+              <div key={item.nameKey} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <span style={{ fontWeight: '500', color: 'var(--text-main)' }}>{item.name}</span>: {stats.variableIncome > 0 ? ((item.value / stats.variableIncome) * 100).toFixed(1) : 0}%
+              </div>
+            ))}
+        </div>
+       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
         {/* Expenses Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <PieChartIcon size={20} color="var(--danger)" />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('byCategory')}</h3>
-          </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+             <PieChartIcon size={20} color="var(--danger)" />
+             <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('byCategory')}</h3>
+           </div>
 
-          <div style={{ height: '360px', width: '100%', minHeight: '360px' }}>
-            {stats.expenseChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.expenseChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    labelLine={false}
-                  >
-                    {stats.expenseChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-glass)',
-                      borderRadius: '12px',
-                      backdropFilter: 'blur(10px)',
-                      color: 'var(--text-main)'
-                    }}
-                    itemStyle={{ color: 'var(--text-main)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                {t('noData')}
-              </div>
-            )}
-          </div>
+            <div style={{ position: 'relative', width: '100%', height: '360px', minWidth: '300px', minHeight: '300px' }}>
+              {stats && stats.expenseChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.expenseChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      labelLine={false}
+                    >
+                      {stats.expenseChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(10px)',
+                        color: 'var(--text-main)'
+                      }}
+                      itemStyle={{ color: 'var(--text-main)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                  {t('noData')}
+                </div>
+              )}
+            </div>
 
           {stats.expenseChartData.length > 0 && (
             <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -427,9 +611,9 @@ const Dashboard = () => {
                     <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: COLORS[index % COLORS.length] }} />
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                    {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.expense > 0 ? ((item.value / stats.expense) * 100).toFixed(1) : 0}%)
-                  </div>
+                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
+                     {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({item.percent.toFixed(1)}%)
+                   </div>
                 </div>
               ))}
             </div>
@@ -438,47 +622,47 @@ const Dashboard = () => {
 
         {/* Income Chart */}
         <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <PieChartIcon size={20} color="var(--success)" />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('incomeByCategory')}</h3>
-          </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+             <PieChartIcon size={20} color="var(--success)" />
+             <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('incomeByCategory')}</h3>
+           </div>
 
-          <div style={{ height: '360px', width: '100%', minHeight: '360px' }}>
-            {stats.incomeChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats.incomeChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    labelLine={false}
-                  >
-                    {stats.incomeChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-glass)',
-                      borderRadius: '12px',
-                      backdropFilter: 'blur(10px)',
-                      color: 'var(--text-main)'
-                    }}
-                    itemStyle={{ color: 'var(--text-main)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                {t('noData')}
-              </div>
-            )}
-          </div>
+            <div style={{ position: 'relative', width: '100%', height: '360px', minWidth: '300px', minHeight: '300px' }}>
+              {stats && stats.incomeChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.incomeChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      labelLine={false}
+                    >
+                      {stats.incomeChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(10px)',
+                        color: 'var(--text-main)'
+                      }}
+                      itemStyle={{ color: 'var(--text-main)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                  {t('noData')}
+                </div>
+              )}
+            </div>
 
           {stats.incomeChartData.length > 0 && (
             <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -488,9 +672,9 @@ const Dashboard = () => {
                     <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: COLORS[(index + 3) % COLORS.length] }} />
                     <span style={{ color: 'var(--text-main)' }}>{item.name}</span>
                   </div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
-                    {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({stats.income > 0 ? ((item.value / stats.income) * 100).toFixed(1) : 0}%)
-                  </div>
+                   <div style={{ fontWeight: '600', color: 'var(--text-main)' }}>
+                     {displayCurrency} {item.value.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2 })} ({item.percent.toFixed(1)}%)
+                   </div>
                 </div>
               ))}
             </div>
@@ -504,28 +688,28 @@ const Dashboard = () => {
             <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{t('historical')}</h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {[
-              { id: 'month', label: t('monthly'), sub: t('last30') },
-              { id: 'quarter', label: t('quarterly'), sub: t('last3') },
-              { id: 'semester', label: t('semiannual'), sub: t('last6') },
-              { id: 'year', label: t('annual'), sub: t('last12') }
-            ].map(p => {
-              const amount = periodBalances[p.id];
-              const formatted = amount.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              const isPositive = amount >= 0;
-              return (
-                <div key={p.id} className="glass" style={{
-                  padding: '16px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <span style={{ fontWeight: '500' }}>
-                    {t('balanceOf')} {p.label}
-                  </span>
-                  <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+             {[
+               { id: 'month', balanceKey: 'monthlyBalance', sub: t('last30') },
+               { id: 'quarter', balanceKey: 'quarterlyBalance', sub: t('last3') },
+               { id: 'semester', balanceKey: 'semiannualBalance', sub: t('last6') },
+               { id: 'year', balanceKey: 'annualBalance', sub: t('last12') }
+             ].map(p => {
+               const amount = periodBalances[p.id];
+               const formatted = amount.toLocaleString('es-AR', { useGrouping: true, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+               const isPositive = amount >= 0;
+               return (
+                 <div key={p.id} className="glass" style={{
+                   padding: '16px',
+                   borderRadius: '16px',
+                   display: 'flex',
+                   justifyContent: 'space-between',
+                   alignItems: 'center'
+                 }}>
+                   <span style={{ fontWeight: '500' }}>
+                     {t(p.balanceKey)}
+                   </span>
+                   <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <div style={{
                       fontWeight: '700',
                       fontSize: '1.1rem',

@@ -30,41 +30,57 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
 
   const filteredCurrencies = currencies.filter(c =>
     c.code.toLowerCase().includes(curSearch.toLowerCase()) ||
-    (c.name && c.name.toLowerCase().includes(curSearch.toLowerCase()))
+    t(c.translationKey).toLowerCase().includes(curSearch.toLowerCase())
   );
 
-  const categories = useMemo(() => {
-    const baseExpense = ['Food', 'Transport', 'Housing', 'Services', 'Entertainment', 'Health', 'Education'];
-    const baseIncome = ['Salary', 'Sales', 'Investment', 'Gift'];
+   const categories = useMemo(() => {
+     const baseExpense = ['Food', 'Transport', 'Housing', 'Services', 'Entertainment', 'Health', 'Education'];
+     const baseIncome = ['Salary', 'Sales', 'Investment', 'Gift'];
+     const COMMON = ['Others', 'Otros']; // Categoría común a ambos tipos
 
-    // Get custom categories from transactions of this type
-    const customCats = transactions
-      .filter(tx => {
-        const isDefault = [...baseExpense, ...baseIncome].includes(tx.category);
-        return !isDefault && tx.type === formData.type;
-      })
-      .map(tx => tx.category);
+     const PREDEFINED = [...baseExpense, ...baseIncome, ...COMMON];
 
-    const uniqueCustom = [...new Set(customCats)];
-    const currentBase = formData.type === 'expense' ? baseExpense : baseIncome;
+     // Custom categories (excluye predefinidas y COMMON)
+     const customCats = transactions
+       .filter(tx => {
+         const isPredefined = PREDEFINED.includes(tx.category);
+         return !isPredefined && tx.type === formData.type;
+       })
+       .map(tx => tx.category);
 
-    return [
-      ...currentBase.map(id => ({ id, label: t(`cat_${id.toLowerCase()}`) || id })),
-      ...uniqueCustom.map(id => ({ id, label: id })),
-      { id: 'Others', label: t('others') }
-    ];
-  }, [formData.type, transactions, t]);
+     const uniqueCustom = [...new Set(customCats)];
+
+     const baseCategories = formData.type === 'expense'
+       ? [...baseExpense, ...COMMON]
+       : [...baseIncome, ...COMMON];
+
+     // Normalizar 'Otros' → 'Others' y filtrar los que ya están en baseCategories
+     const normalizedCustom = uniqueCustom
+       .map(cat => cat === 'Otros' ? 'Others' : cat)
+       .filter(cat => !baseCategories.includes(cat));
+
+     return [
+       ...baseCategories.map(id => {
+         if (id === 'Others') return { id: 'Others', label: t('others') };
+         return { id, label: t(`cat_${id.toLowerCase()}`) || id };
+       }),
+       ...normalizedCustom.map(id => {
+         if (id === 'Others') return { id: 'Others', label: t('others') };
+         return { id, label: id };
+       })
+     ];
+   }, [formData.type, transactions, t]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.category) return setError(t('specify'));
     if (parseFloat(formData.amount) <= 0 || isNaN(parseFloat(formData.amount))) return setError(t('invalidAmount'));
 
-    const finalData = {
-      ...formData,
-      amount: parseFloat(formData.amount),
-      category: formData.category === 'Others' ? (customCategory || t('others')) : formData.category
-    };
+     const finalData = {
+       ...formData,
+       amount: parseFloat(formData.amount),
+       category: formData.category === 'Others' ? (customCategory || 'Others') : formData.category
+     };
 
     if (transactionToEdit) {
       updateTransaction(finalData);
@@ -227,35 +243,31 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
                         onChange={(e) => setCurSearch(e.target.value)}
                         autoFocus
                       />
-                      <div style={{ overflowY: 'auto', flex: 1 }}>
-                        {filteredCurrencies.map(c => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            className="btn-option"
-                            style={{
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              background: formData.currency === c.code ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                              color: formData.currency === c.code ? 'var(--primary)' : 'var(--text-main)',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: '2px'
-                            }}
-                            onClick={() => {
-                              setFormData({ ...formData, currency: c.code });
-                              setShowCurMenu(false);
-                              setCurSearch('');
-                            }}
-                          >
-                            <span style={{ fontSize: '0.9rem' }}><b>{c.code}</b> - {c.name}</span>
-                            <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{c.symbol}</span>
-                          </button>
-                        ))}
-                      </div>
+                       <div style={{ overflowY: 'auto', flex: 1 }}>
+                         {filteredCurrencies.map(c => (
+                           <button
+                             key={c.code}
+                             type="button"
+                             className="btn-option"
+                             style={{
+                               padding: '10px 16px',
+                               fontSize: '0.9rem',
+                               textAlign: 'left',
+                               opacity: formData.currency === c.code ? 0.6 : 1,
+                               cursor: 'pointer'
+                             }}
+                             onClick={() => {
+                               setFormData({ ...formData, currency: c.code });
+                               setShowCurMenu(false);
+                             }}
+                           >
+                             <span style={{ fontWeight: '500' }}>{c.code}</span>
+                             <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+                               {' '}- {t(c.translationKey)}
+                             </span>
+                           </button>
+                         ))}
+                       </div>
                     </motion.div>
                   </>
                 )}

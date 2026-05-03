@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.9.1-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.9.2-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -9,10 +9,12 @@
 ## ✨ Características Principales
 
 - 📊 **Panel de Control Dinámico**: Visualización de balances netos e ingresos/gastos por categoría mediante gráficos interactivos con etiquetas y leyendas.
+- 📈 **Análisis de Composición**: Detalle de porcentajes por categoría dentro de cada grupo (ingresos fijos/variables, gastos fijos/variables) mostrando la contribución relativa de cada categoría.
 - 🌐 **Multilingüe (i18n)**: Soporte completo para **Español** e **Inglés**.
 - 📝 **CRUD de Movimientos**: Sistema completo para crear, editar y eliminar transacciones con validación de montos.
-- 🧠 **Categorías Inteligentes**: Listado dinámico según el tipo de movimiento y memoria de categorías personalizadas.
-- 🔍 **Filtros Avanzados**: Búsqueda potente con capacidad de limpiar filtros y selección contextual.
+- 🧠 **Categorías Inteligentes**: Listado dinámico según el tipo de movimiento y memoria de categorías personalizadas. "Otros" es una categoría única compartida entre ingresos y gastos.
+- 🔍 **Filtros Avanzados**: Búsqueda potente con capacidad de limpiar filtros y selección contextual. Los filtros se aplican al período, moneda, tipo y categoría.
+- 💱 **Conversión de Monedas en Tiempo Real**: Tasas de cambio actualizadas vía API externa con fallback a rates predefinidos. Las conversiones se cachean por día para optimizar rendimiento.
 - 📱 **Diseño 100% Responsivo**: Interfaz optimizada para móviles, tablets y escritorio.
 
 ## 🚀 Tecnologías Utilizadas
@@ -23,6 +25,7 @@
 - **Iconografía**: [Lucide React](https://lucide.dev/).
 - **Gráficos**: [Recharts](https://recharts.org/).
 - **Persistencia**: `localStorage` nativo del navegador.
+- **Backend/Auth**: [Firebase](https://firebase.google.com/) (Auth + Firestore).
 
 ## 🛠️ Instalación y Uso
 
@@ -49,17 +52,28 @@
 ## 📂 Estructura del Proyecto
 
 - `src/components/`: Componentes reutilizables de UI (Navbar, Footer, Forms).
-- `src/context/`: Gestión del estado global mediante `AppContext` (Sesión, Idioma, Tema, Movimientos).
+- `src/context/`: Gestión del estado global mediante `AppContext` (Sesión, Idioma, Tema, Movimientos, Tasas de cambio).
 - `src/pages/`: Vistas principales (Dashboard, Transactions, Auth).
-- `src/constants/`: Diccionario de traducciones y configuraciones.
+- `src/constants/`: Diccionario de traducciones y configuraciones de monedas.
 - `src/index.css`: Sistema de diseño global y variables de tema.
 
 ## 📜 Historial de Versiones
 
+### v2.0.0 (03/05/2026)
+- **Análisis de Composición de Gastos/Ingresos**: Nuevas cards que muestran el porcentaje de ingresos fijos, ingresos variables, gastos fijos y gastos variables respecto al total, con desglose detallado de cada categoría y su aporte porcentual dentro de cada subtipo.
+- **Clasificación Automática de Categorías**: Las categorías se clasifican automáticamente como fijas (Housing, Services, Salary) o variables (resto, incluyendo "Otros"). La clasificación es completamente dinámica y se recalcula con los filtros.
+- **Flujo Completo de Recuperación de Contraseña**: Implementación de página personalizada para reset de contraseña con validación de coincidencia y redirección automática al login. Incluye backend con nodemailer y Firebase Admin.
+- **Unificación de Categoría "Otros"**: "Otros" es ahora una categoría única compartida entre ingresos y gastos, apareciendo una sola vez en los filtros. Las variantes "Otros"/"Others" se normalizan internamente.
+- **Motor de Conversión Mejorado**: Cambiado a API `open.er-api.com` (sin CORS, soporta ARS) con fallback de tasas hardcoded actualizadas. Cache por día y promesas pendientes para evitar requests duplicados.
+- **Gráficos Corregidos**: Solucionados warnings de Recharts y errores de dimensiones usando `ResponsiveContainer` con contenedores de tamaño mínimo.
+- **Limpieza de Código**: Eliminación de todos los `console.*` y comentarios revealing. Código más mantenible y listo para producción.
+- **Fórmula de Tasa de Ahorro**: Ahora se calcula como `(ingresos - gastos) / ingresos * 100` (antes basado solo en Salary).
+- **Internacionalización Completa**: Todos los textos, incluyendo selectores de moneda, están traducidos al español e inglés según el idioma seleccionado por el usuario. Los selectores de fecha nativos (`<input type="month">`, `<input type="date">`) dependen del idioma del navegador/OS y no pueden ser traducidos por la app.
+
 ### v1.9.1 (02/05/2026)
 - **Recuperación de Contraseña por Email**: Implementación completa de flujo de reset de contraseña mediante enlace enviado por correo (nodemailer + Firebase Admin). Incluye página de reset con validación de coincidencia de contraseñas y redirección automática al login.
 - **Backend API**: Servidor Express con nodemailer para envío de emails, verificación de usuarios mediante Firebase Admin, y soporte para dominios de producción (Vercel) y desarrollo local.
-- **Mensajes de Éxito Visuales**: Iconografía de CheckCircle en mensajes de confirmación (Auth y Reset) con estilo deGlassmorphism consistente.
+- **Mensajes de Éxito Visuales**: Iconografía de CheckCircle en mensajes de confirmación (Auth y Reset) con estilo de Glassmorphism consistente.
 - **Mejora de Seguridad**: Service Account de Firebase manejado como archivo local y variable de entorno, excluido del repositorio via `.gitignore`.
 - **Actualización de Dependencias**: Agregadas `firebase-admin`, `nodemailer`, `express`, `cors`, `dotenv`.
 
@@ -81,69 +95,7 @@
 - **Formato Argentino Consistente**: Todos los montos se muestran con coma decimal y sin separador de miles (ej: `525997,00`),eliminando ambigüedad.
 - **Persistencia de Tasas**: Las tasas ARS se guardan en `localStorage` por día, permitiendo recargas sin llamar a la API y fallback a la última tasa conocida.
 
-### v1.8.0 (30/04/2026)
-- **UX Móvil Maestro-Detalle**: Rediseño de la página de Movimientos para dispositivos móviles. La tabla ahora es más limpia y permite desplegar detalles y acciones (editar/eliminar) al tocar cada fila, optimizando el espacio.
-- **Header Responsivo Dinámico**: Ajuste del encabezado en móviles para priorizar el título y ubicar el botón de "Nuevo Movimiento" de forma clara y accesible.
-- **Sincronización de UI Automática**: Implementación de detección de tamaño de pantalla en tiempo real para adaptar la lógica de interacción instantáneamente al redimensionar.
-- **Refactorización de Estabilidad**: Solución de conflictos de nombres entre variables de transacciones y funciones de traducción, y corrección de advertencias de `framer-motion`.
-
-### v1.7.0 (29/04/2026)
-- **Motor de Divisas Universal**: Migración a **ExchangeRate-API**. Ahora el sistema soporta conversiones precisas para todas las monedas latinoamericanas (CLP, COP, UYU, MXN, etc.) eliminando el error de paridad 1:1.
-- **Formateo Numérico Limpio**: Eliminación global de los separadores de miles (comas) en todos los montos para una lectura más clara y técnica.
-- **Dashboard Visual Pro**: Implementación de desgloses detallados de porcentajes y montos convertidos debajo de los gráficos de torta.
-- **Selector de Divisas Nativo**: Optimización del selector de moneda para garantizar la visibilidad de todas las opciones y compatibilidad total en dispositivos móviles.
-- **Optimización de Conversión**: Refactorización de la lógica de "puente" de divisas para evitar bucles infinitos y mejorar la velocidad de carga del Panel de Control.
-
-### v1.6.0 (29/04/2026)
-- **Sincronización Cloud (Firebase)**: Migración completa de almacenamiento local a **Google Firebase (Firestore & Auth)**. Ahora los movimientos se sincronizan en tiempo real entre múltiples dispositivos (PC, móvil, tablet).
-- **Seguridad y Variables de Entorno**: Implementación de archivos `.env` y configuración segura de credenciales para evitar exposiciones en repositorios públicos.
-- **Optimización de UX**: Corrección de errores de renderizado en el Navbar y mejoras en la estabilidad de la sesión.
-
-### v1.5.4 (29/04/2026)
-- **Localización Integral**: Eliminación de todos los textos "hardcoded". Ahora, todos los nombres de divisas, etiquetas de "Opcional", y títulos dinámicos del Dashboard se traducen automáticamente al cambiar de idioma.
-- **Refinamiento de UI**: Corrección de errores menores en los formularios y mejora en la coherencia de las etiquetas de categorías.
-
-### v1.5.3 (29/04/2026)
-- **Internacionalización de Errores**: Mensajes de "El usuario ya existe" y "Credenciales inválidas" ahora se muestran correctamente en el idioma seleccionado.
-- **Limpieza de Base de Datos Local**: Optimización del motor de unificación para eliminar definitivamente cuentas duplicadas obsoletas y consolidar todos los movimientos en el perfil activo.
-- **UX Adaptativa**: Mejoras en la retroalimentación visual durante el proceso de autenticación.
-
-### v1.5.2 (29/04/2026)
-- **Solución Error 404 (Vercel)**: Implementación de `vercel.json` con reglas de reescritura para permitir la navegación directa y recargas de página en rutas secundarias de la SPA.
-- **Unificación de Cuentas Robusta**: El sistema ahora ignora mayúsculas y espacios en los correos electrónicos, garantizando que `User@mail.com` y `user@mail.com` se unifiquen correctamente sin pérdida de datos.
-- **Sincronización de Sesión Crítica**: Corrección de lógica que permite actualizar la sesión activa inmediatamente después de una fusión de cuentas en segundo plano.
-
-### v1.5.1 (29/04/2026)
-- **Corrección Crítica de Fusión**: Optimización del motor de unificación para garantizar la sincronización instantánea de movimientos entre cuentas duplicadas.
-- **Robustez Multi-pestaña**: Mejora en los listeners de `Storage` para evitar inconsistencias en el estado global.
-
-### v1.5.0 (29/04/2026)
-- **Sincronización en Tiempo Real**: Implementación de `Storage Events` para sincronizar movimientos, tema e idioma instantáneamente entre múltiples pestañas.
-- **Fusión Inteligente de Cuentas**: Algoritmo de migración que detecta y unifica cuentas con el mismo correo electrónico, combinando sus historiales de transacciones de forma segura.
-- **Estabilidad de Sesión**: Mejora en la consistencia de la sesión de usuario en entornos multi-pestaña.
-
-### v1.4.0 (29/04/2026)
-- **Navegación Móvil (Hamburger Menu)**: Implementación de un menú lateral animado con `framer-motion` para una experiencia fluida en smartphones.
-- **Optimización de Auth**: Soporte completo para el autocompletado del navegador mediante atributos `name` y `autoComplete`, facilitando la persistencia de credenciales entre dispositivos.
-- **Seguridad en Registro**: Bloqueo de registros duplicados con el mismo correo electrónico mediante validación en tiempo real.
-- **Refinamiento UI/UX**: Reubicación de los selectores de idioma y tema para mejorar la jerarquía visual y accesibilidad.
-- **Correcciones de Sintaxis**: Limpieza de propiedades CSS inválidas y optimización de transiciones.
-
-### v1.3.0 (29/04/2026)
-- **Categorías Inteligentes**: Las categorías ahora se filtran automáticamente según si el movimiento es un ingreso o un gasto.
-- **Memoria de Categorías**: El sistema ahora recuerda y ofrece categorías personalizadas creadas previamente a través de la opción "Otros".
-- **Dashboard Mejorado**: Se añadió un gráfico de "Ingresos por Categoría" y se incluyeron etiquetas y leyendas en todos los gráficos.
-- **UX en Filtros**: Se implementó el botón "Limpiar Filtros" y la carga dinámica de opciones en los desplegables.
-- **Correcciones de UI**: Optimización de modales para evitar solapamientos con el Navbar y mejora de la responsividad en tablas.
-
-### v1.2.0 (28/04/2026)
-- Implementación de la edición de movimientos existentes.
-- Validación de montos positivos y mejora de inputs numéricos.
-- Primera fase de diseño responsivo y corrección de errores de compatibilidad CSS.
-
-### v1.1.0 (27/04/2026)
-- Sistema básico de Internacionalización (i18n) en español e inglés.
-- Integración de Recharts para visualización de gastos.
+*(Versiones anteriores disponibles en el historial completo)*
 
 ---
 
