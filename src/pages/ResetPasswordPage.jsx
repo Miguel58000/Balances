@@ -39,8 +39,15 @@ const ResetPasswordPage = () => {
       if (result?.error) {
         if (result.error === 'auth/expired-action-code') {
           setError(t('expiredLink'));
-        } else {
-          setError(result.error);
+         } else {
+          // Mapear errores de Firebase a mensajes traducidos
+          if (result.error === 'auth/invalid-action-code' || result.error === 'auth/expired-action-code') {
+            setError(t('expiredLink'));
+          } else if (result.error === 'auth/user-not-found') {
+            setError(t('emailNotFound'));
+          } else {
+            setError(t('invalidOrExpiredCode'));
+          }
         }
       }
       if (result?.email) {
@@ -179,10 +186,9 @@ const ResetPasswordPage = () => {
                     autoComplete="new-password"
                     className="input-control"
                     style={{ paddingLeft: '40px' }}
-                    placeholder="••••••••"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                     placeholder="••••••••"
+                     value={newPassword}
+                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
               </div>
@@ -198,10 +204,9 @@ const ResetPasswordPage = () => {
                     autoComplete="new-password"
                     className="input-control"
                     style={{ paddingLeft: '40px' }}
-                    placeholder="••••••••"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                     placeholder="••••••••"
+                     value={confirmPassword}
+                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
                 </div>
               </div>
