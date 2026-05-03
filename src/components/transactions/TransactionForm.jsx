@@ -73,8 +73,29 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.category) return setError(t('specify'));
-    if (parseFloat(formData.amount) <= 0 || isNaN(parseFloat(formData.amount))) return setError(t('invalidAmount'));
+    setError('');
+
+    // Validaciones
+    if (!formData.title.trim()) {
+      setError(t('title') + ' ' + t('specify').toLowerCase());
+      return;
+    }
+
+    if (!formData.category) {
+      setError(t('specify'));
+      return;
+    }
+
+    const amountNum = parseFloat(formData.amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      setError(t('invalidAmount'));
+      return;
+    }
+
+    if (formData.category === 'Others' && !customCategory.trim()) {
+      setError(t('specify'));
+      return;
+    }
 
      const finalData = {
        ...formData,
@@ -150,13 +171,12 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
               type="text"
               className="input-control"
               style={{ paddingLeft: '32px' }}
-              placeholder={t('title')}
-              required
-              value={formData.title}
-              onChange={(e) => {
-                setFormData({ ...formData, title: e.target.value });
-                setError('');
-              }}
+               placeholder={t('title')}
+               value={formData.title}
+               onChange={(e) => {
+                 setFormData({ ...formData, title: e.target.value });
+                 setError('');
+               }}
             />
           </div>
         </div>
@@ -170,11 +190,10 @@ const TransactionForm = ({ onClose, transactionToEdit }) => {
                 type="number"
                 className="input-control no-spinner"
                 style={{ paddingLeft: '32px' }}
-                placeholder="0.00"
-                required
-                min="0.01"
-                step="any"
-                value={formData.amount}
+                 placeholder="0.00"
+                 min="0.01"
+                 step="any"
+                 value={formData.amount}
                 onChange={(e) => {
                   setFormData({ ...formData, amount: e.target.value });
                   setError('');

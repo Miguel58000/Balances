@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Wallet, ArrowLeft, CheckCircle } from 'lucide-react';
@@ -10,38 +10,68 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loadingReset, setLoadingReset] = useState(false);
+
+  // Auto-clear error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Auto-clear success after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
   const { login, register, sendPasswordReset, t, toggleLanguage, language } = useApp();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError(t('invalidEmail') || 'Invalid email format');
+    // Validar campos vacíos
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError(t('bothFieldsRequired'));
       return;
     }
 
-    // Validate password length
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError(t('invalidEmail'));
+      return;
+    }
+
+    // Validar longitud de contraseña
     if (formData.password.length < 6) {
-      setError(t('passwordTooShort') || 'Password must be at least 6 characters');
+      setError(t('passwordTooShort'));
       return;
     }
 
     if (isLogin) {
       const res = await login(formData.email, formData.password);
-      if (!res.success) setError(t('invalidCredentials'));
+      if (!res.success) {
+        if (res.error === 'auth/invalid-credential' || res.error === 'auth/wrong-password' || res.error === 'auth/user-not-found') {
+          setError(t('invalidCredentials'));
+        } else {
+          setError(res.error || t('invalidCredentials'));
+        }
+      }
     } else {
       const res = await register(formData.name, formData.email, formData.password);
       if (!res.success) {
         // Handle specific Firebase errors
         if (res.error?.includes('email-already-in-use')) {
-          setError(t('emailAlreadyInUse') || 'Email already in use');
+          setError(t('emailAlreadyInUse'));
         } else if (res.error?.includes('weak-password')) {
-          setError(t('weakPassword') || 'Password should be at least 6 characters');
+          setError(t('passwordTooShort'));
         } else if (res.error?.includes('invalid-email')) {
-          setError(t('invalidEmail') || 'Invalid email format');
+          setError(t('invalidEmail'));
+        } else if (res.error?.includes('missing-email') || res.error?.includes('missing-password')) {
+          setError(t('bothFieldsRequired'));
         } else {
           setError(res.error || t('userExists'));
         }
@@ -49,31 +79,34 @@ const AuthPage = () => {
     }
   };
 
-   const handleForgotPassword = async (e) => {
-     e.preventDefault();
-     setError('');
-     setSuccess('');
-     setLoadingReset(true);
-     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-     if (!emailRegex.test(formData.email)) {
-       setError(t('invalidEmail') || 'Invalid email format');
-       setLoadingReset(false);
-       return;
-     }
+    const handleForgotPassword = async (e) => {
+      e.preventDefault();
+      setError('');
+      setSuccess('');
+      setLoadingReset(true);
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError(t('invalidEmail'));
+        setLoadingReset(false);
+        return;
+      }
 
-     const res = await sendPasswordReset(formData.email);
-     setLoadingReset(false);
-     if (res.success) {
-       setSuccess(t('resetLinkSent') || 'Reset link sent. Check your email');
-       // No cerramos automáticamente, que el usuario vea el mensaje
-     } else {
-       if (res.error === 'user-not-found') {
-         setError(t('emailNotFound') || 'Email not registered');
-       } else {
-         setError(res.error || t('errorSendingResetEmail') || 'Error sending reset email');
-       }
-     }
-   };
+      const res = await sendPasswordReset(formData.email);
+      setLoadingReset(false);
+      if (res.success) {
+        setSuccess(t('resetLinkSent'));
+      } else {
+        if (res.error === 'USER_NOT_FOUND') {
+          setError(t('emailNotFound'));
+        } else if (res.error === 'INVALID_EMAIL') {
+          setError(t('invalidEmail'));
+        } else if (res.error === 'EMAIL_REQUIRED') {
+          setError(t('invalidAmount') || 'Email required');
+        } else {
+          setError(t('errorSendingResetEmail'));
+        }
+      }
+    };
 
   const handleBack = () => {
     setShowForgotPassword(false);
@@ -159,10 +192,9 @@ const AuthPage = () => {
                   autoComplete="name"
                   className="input-control"
                   style={{ paddingLeft: '40px' }}
-                  placeholder="John Doe"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                   placeholder="John Doe"
+                   value={formData.name}
+                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
             </div>
@@ -179,11 +211,10 @@ const AuthPage = () => {
                 autoComplete="email"
                 className="input-control"
                 style={{ paddingLeft: '40px' }}
-                placeholder="name@example.com"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={showForgotPassword && false}
+                 placeholder="name@example.com"
+                 value={formData.email}
+                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                 disabled={showForgotPassword && false}
               />
             </div>
           </div>
@@ -200,10 +231,9 @@ const AuthPage = () => {
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   className="input-control"
                   style={{ paddingLeft: '40px' }}
-                  placeholder="••••••••"
-                  required={!showForgotPassword}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                   placeholder="••••••••"
+                   value={formData.password}
+                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
               </div>
             </div>

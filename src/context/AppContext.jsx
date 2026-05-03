@@ -168,29 +168,29 @@ export const AppProvider = ({ children }) => {
   const toggleLanguage = () => setLanguage(prev => prev === 'es' ? 'en' : 'es');
   const t = (key) => (translations[language] && translations[language][key]) || key;
 
-  const login = async (email, password) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
+   const login = async (email, password) => {
+     try {
+       await signInWithEmailAndPassword(auth, email, password);
+       return { success: true };
+     } catch (error) {
+       return { success: false, error: error.code };
+     }
+   };
 
-  const register = async (name, email, password) => {
-    try {
-      const res = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(res.user, { displayName: name });
-      setCurrentUser({
-        id: res.user.uid,
-        name,
-        email
-      });
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  };
+   const register = async (name, email, password) => {
+     try {
+       const res = await createUserWithEmailAndPassword(auth, email, password);
+       await updateProfile(res.user, { displayName: name });
+       setCurrentUser({
+         id: res.user.uid,
+         name,
+         email
+       });
+       return { success: true };
+     } catch (error) {
+       return { success: false, error: error.code };
+     }
+   };
 
   const logout = () => signOut(auth);
 

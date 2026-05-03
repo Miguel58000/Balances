@@ -1,7 +1,7 @@
 # Balances - Personal Finance Tracker
 
 ![Balances Banner](https://img.shields.io/badge/Balances-Finance_Tracker-6366f1?style=for-the-badge&logo=react)
-![Version](https://img.shields.io/badge/version-1.9.2-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.0.1-blue?style=for-the-badge)
 
 
 **Balances** es una plataforma profesional de gestión de finanzas personales diseñada con una estética moderna basada en *Glassmorphism*. Permite a los usuarios llevar un control exhaustivo de sus ingresos y gastos, visualizar estadísticas detalladas y personalizar su experiencia a través de múltiples idiomas y temas.
@@ -13,7 +13,7 @@
 - 🌐 **Multilingüe (i18n)**: Soporte completo para **Español** e **Inglés**.
 - 📝 **CRUD de Movimientos**: Sistema completo para crear, editar y eliminar transacciones con validación de montos.
 - 🧠 **Categorías Inteligentes**: Listado dinámico según el tipo de movimiento y memoria de categorías personalizadas. "Otros" es una categoría única compartida entre ingresos y gastos.
-- 🔍 **Filtros Avanzados**: Búsqueda potente con capacidad de limpiar filtros y selección contextual. Los filtros se aplican al período, moneda, tipo y categoría.
+- 🔍 **Filtros Avanzados**: Búsqueda potente con capacidad de limpiar filtros y selección contextual.
 - 💱 **Conversión de Monedas en Tiempo Real**: Tasas de cambio actualizadas vía API externa con fallback a rates predefinidos. Las conversiones se cachean por día para optimizar rendimiento.
 - 📱 **Diseño 100% Responsivo**: Interfaz optimizada para móviles, tablets y escritorio.
 
@@ -56,8 +56,16 @@
 - `src/pages/`: Vistas principales (Dashboard, Transactions, Auth).
 - `src/constants/`: Diccionario de traducciones y configuraciones de monedas.
 - `src/index.css`: Sistema de diseño global y variables de tema.
+- `api/`: Backend en Express con nodemailer para recuperación de contraseña.
 
 ## 📜 Historial de Versiones
+
+### v2.0.1 (03/05/2026)
+- **Validación de Email en Backend**: El endpoint `/api/send-reset-email` ahora valida el formato del email antes de procesar, devolviendo códigos de error (`EMAIL_REQUIRED`, `INVALID_EMAIL`, `USER_NOT_FOUND`) que el frontend traduce al idioma del usuario.
+- **Errores Autolimpiados**: Los mensajes de error y éxito en AuthPage desaparecen automáticamente después de 5 segundos.
+- **Corrección Validación Firebase**: Los errores `auth/invalid-credential` y similares ahora muestran mensajes traducidos correctamente ("Credenciales inválidas" / "Invalid credentials").
+
+
 
 ### v2.0.0 (03/05/2026)
 - **Análisis de Composición de Gastos/Ingresos**: Nuevas cards que muestran el porcentaje de ingresos fijos, ingresos variables, gastos fijos y gastos variables respecto al total, con desglose detallado de cada categoría y su aporte porcentual dentro de cada subtipo.
